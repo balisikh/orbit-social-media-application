@@ -64,7 +64,10 @@ export function ProfileHeader({
             No bio yet{ownerMeta ? " — add one from your account settings when available." : "."}
           </p>
         ) : null}
-        <div className="mt-4 flex flex-wrap gap-3 text-sm">
+        <div
+          className="mt-4 flex flex-wrap gap-3 text-sm"
+          title="Counts will update from your database when posts and follows are connected."
+        >
           <span>
             <strong className="text-zinc-900 dark:text-zinc-50">{stats.posts}</strong> posts
           </span>

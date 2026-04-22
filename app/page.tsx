@@ -12,22 +12,22 @@ const destinations = [
   {
     href: "/feed",
     title: "Feed",
-    description: "Posts from people you follow in a photo-first grid.",
+    description: "Photo-first grid for posts from people you follow — preview layout today, real posts when your API is connected.",
   },
   {
     href: "/reels",
     title: "Reels",
-    description: "Short vertical video and clips in a reels-style experience.",
+    description: "Vertical short video with a reels-style player — route and previews are in place for media next.",
   },
   {
     href: "/messages",
     title: "Messages",
-    description: "Direct conversations and threads with people you connect with.",
+    description: "Inbox and thread UI you can click through now; send and sync arrive with backend messaging.",
   },
   {
     href: "/me",
     title: "Profile",
-    description: "Your account, settings, and public presence — followers and following live here.",
+    description: "Your @handle, bio, avatar, and public page — follower counts and post grid fill in as data ships.",
   },
 ] as const;
 
@@ -54,8 +54,8 @@ export default async function HomePage() {
             Welcome to Orbit
           </h1>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-            Start from this home page, then open Feed, Reels, Messages, or your Profile when you want
-            to use the app.
+            Orbit is the app shell: use this home to sign in, then jump into Feed, Reels, Messages, or Profile. Each area
+            shows what&apos;s live today and what&apos;s on the roadmap.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -134,11 +134,11 @@ export default async function HomePage() {
         </ul>
 
         <p className="mx-auto mt-10 max-w-lg text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Public profiles (for example{" "}
+          Public profiles (try{" "}
           <Link href="/u/you" className="font-medium text-violet-600 underline dark:text-violet-400">
             @you
           </Link>
-          ) show followers, following, and a media grid once wired to your API.
+          ) load from your Orbit database when hosting is on; until then you&apos;ll see a layout preview on that route.
         </p>
       </main>
     </div>
