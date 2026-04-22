@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { HeaderSessionMode } from "@/lib/auth/header-session";
+import { HeaderAuthActions } from "@/components/header-auth-actions";
 
 const nav = [
   { href: "/feed", label: "Feed" },
@@ -22,48 +24,59 @@ function isNavActive(pathname: string, href: string) {
 
 function linkClass(active: boolean) {
   return active
-    ? "rounded-full bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-    : "rounded-full px-3 py-1.5 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50";
+    ? "shrink-0 rounded-full bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+    : "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50";
 }
 
-export function OrbitHeader() {
+type OrbitHeaderProps = {
+  signedInEmail: string | null;
+  sessionMode: HeaderSessionMode;
+  signedInHandle: string | null;
+};
+
+export function OrbitHeader({ signedInEmail, sessionMode, signedInHandle }: OrbitHeaderProps) {
   const pathname = usePathname();
+  const signedIn = Boolean(signedInEmail && sessionMode);
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-[color:var(--orbit-surface)]/90 backdrop-blur-md dark:border-zinc-800/80">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <Link
           href="/"
-          className="font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+          className="shrink-0 font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
         >
           Orbit
         </Link>
-        <nav className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
-          {nav.map((item) => {
-            const active = isNavActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={linkClass(active)}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-          <Link
-            href="/auth/login"
-            className="ml-1 rounded-full px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/auth/signup"
-            className="rounded-full bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Sign up
-          </Link>
+        <nav
+          aria-label="Main"
+          className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3"
+        >
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-1.5 [&::-webkit-scrollbar]:hidden">
+            {nav.map((item) => {
+              const active = isNavActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={linkClass(active)}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+          {signedIn ? (
+            <div
+              className="hidden h-7 w-px shrink-0 bg-zinc-200 dark:bg-zinc-700 sm:block"
+              aria-hidden
+            />
+          ) : null}
+          <HeaderAuthActions
+            signedInEmail={signedInEmail}
+            sessionMode={sessionMode}
+            signedInHandle={signedInHandle}
+          />
         </nav>
       </div>
     </header>

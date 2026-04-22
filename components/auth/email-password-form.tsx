@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { friendlySignInError } from "@/lib/auth/sign-in-errors";
+import { parseUsername } from "@/lib/auth/username";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,8 +13,6 @@ export type EmailPasswordMode = "signin" | "signup";
 type EmailPasswordFormProps = {
   mode: EmailPasswordMode;
 };
-
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 
 export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
   const router = useRouter();
@@ -40,8 +39,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
     }
 
     if (mode === "signup") {
-      const u = username.trim();
-      if (!USERNAME_RE.test(u)) {
+      if (!parseUsername(username)) {
         setError("Username must be 3–30 characters: letters, numbers, and underscores only.");
         return;
       }
@@ -62,7 +60,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
     setLoading(true);
     try {
       if (!ready && isDev) {
-        const handle = mode === "signup" ? username.trim().toLowerCase() : undefined;
+        const handle = mode === "signup" ? parseUsername(username) ?? undefined : undefined;
         const res = await fetch("/api/orbit-dev-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -85,7 +83,11 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
       const origin = window.location.origin;
 
       if (mode === "signup") {
-        const handle = username.trim().toLowerCase();
+        const handle = parseUsername(username);
+        if (!handle) {
+          setError("Username must be 3–30 characters: letters, numbers, and underscores only.");
+          return;
+        }
         const { data, error: signError } = await supabase.auth.signUp({
           email: trimmedEmail,
           password,
@@ -101,12 +103,13 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
           return;
         }
         if (data.session) {
+          await fetch("/api/profile/sync", { method: "POST" }).catch(() => {});
           router.push("/feed");
           router.refresh();
           return;
         }
         setInfo(
-          "Check your email to confirm your account, then sign in. If email confirmation is off in Supabase, you can sign in now.",
+          "Check your email to confirm your account, then sign in. If your project does not require email confirmation, you can sign in right away.",
         );
         return;
       }
@@ -119,6 +122,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
         setError(friendlySignInError(signInError.message));
         return;
       }
+      await fetch("/api/profile/sync", { method: "POST" }).catch(() => {});
       router.push("/feed");
       router.refresh();
     } catch (err) {

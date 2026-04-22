@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HeaderAuthActions } from "@/components/header-auth-actions";
+import { getHeaderSession } from "@/lib/auth/header-session";
 
 export const metadata: Metadata = {
   title: "Orbit — home",
@@ -29,26 +31,17 @@ const destinations = [
   },
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { email, mode, handle } = await getHeaderSession();
+
   return (
     <div className="flex min-h-full flex-col bg-[color:var(--orbit-surface)]">
       <header className="border-b border-zinc-200/80 bg-[color:var(--orbit-surface)]/90 backdrop-blur-md dark:border-zinc-800/80">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <span className="font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Orbit</span>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/auth/login"
-              className="rounded-full px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="rounded-full bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              Sign up
-            </Link>
-          </div>
+          <Link href="/" className="font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Orbit
+          </Link>
+          <HeaderAuthActions signedInEmail={email} sessionMode={mode} signedInHandle={handle} />
         </div>
       </header>
 

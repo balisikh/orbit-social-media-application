@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Orbit — photo-first social",
-  description: "Public photo-first social: feed, profiles, reels, and messages.",
+  description: "Orbit — a photo-first social app for your feed, reels, messages, and profile.",
 };
 
 export default function RootLayout({

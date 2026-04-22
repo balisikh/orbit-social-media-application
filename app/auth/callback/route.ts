@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureProfileForUser } from "@/lib/profiles/ensure-profile";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -12,6 +13,12 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await ensureProfileForUser(supabase, user);
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

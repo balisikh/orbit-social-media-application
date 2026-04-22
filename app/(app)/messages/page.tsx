@@ -6,8 +6,7 @@ export default function MessagesPage() {
           Messages
         </h1>
         <p className="mt-1 max-w-xl text-sm text-zinc-600 dark:text-zinc-400">
-          Direct messages will use Supabase Realtime or websockets for live
-          delivery.
+          Direct messages and live delivery will plug in here as Orbit&apos;s messaging layer ships.
         </p>
       </div>
       <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:grid-cols-[minmax(0,220px)_1fr] sm:p-0">

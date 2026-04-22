@@ -14,7 +14,8 @@ export default function SignupPage() {
           </h1>
           {!ready && process.env.NODE_ENV === "development" ? (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Local development: you can create an account without Supabase keys (preview session only).
+              Running <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-900">npm run dev</code> without
+              cloud credentials? You can still create a <strong className="font-medium text-zinc-800 dark:text-zinc-200">local preview</strong> account to try Orbit.
             </p>
           ) : !ready ? (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">

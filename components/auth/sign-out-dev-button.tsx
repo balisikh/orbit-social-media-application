@@ -25,7 +25,7 @@ export function SignOutDevButton() {
       onClick={signOut}
       className="mt-3 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
     >
-      {pending ? "Signing out…" : "Sign out (local preview)"}
+      {pending ? "Signing out…" : "Sign out"}
     </button>
   );
 }

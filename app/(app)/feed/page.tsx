@@ -8,7 +8,7 @@ export default function FeedPage() {
           Feed
         </h1>
         <p className="mt-1 max-w-xl text-sm text-zinc-600 dark:text-zinc-400">
-          Photo-first posts from people you follow. Connect Supabase and load real data next.
+          Photo-first posts from people you follow. When Orbit is connected to your backend, this feed will fill with real posts.
         </p>
       </div>
       <FeedPlaceholder />

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not available" }, { status: 403 });
   }
   if (getSupabasePublicConfig().ready) {
-    return NextResponse.json({ error: "Supabase is configured" }, { status: 400 });
+    return NextResponse.json({ error: "Cloud sign-in is already configured for this app." }, { status: 400 });
   }
 
   let body: { email?: string; username?: string | null };
