@@ -4,19 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { friendlySignInError } from "@/lib/auth/sign-in-errors";
+import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 import { createClient } from "@/lib/supabase/client";
 
 export type EmailPasswordMode = "signin" | "signup";
 
 type EmailPasswordFormProps = {
   mode: EmailPasswordMode;
-  /** When false, form fields work but Submit explains that Supabase env is missing (from server `ready`). */
-  backendReady?: boolean;
 };
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 
-export function EmailPasswordForm({ mode, backendReady = true }: EmailPasswordFormProps) {
+export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -52,9 +51,9 @@ export function EmailPasswordForm({ mode, backendReady = true }: EmailPasswordFo
       }
     }
 
-    if (!backendReady) {
+    if (!getSupabasePublicConfig().ready) {
       setError(
-        "Sign-in is not enabled on this installation yet. Add the missing values to .env.local, restart npm run dev, then reload this page.",
+        "The sign-in service is not connected yet. In your project folder, edit .env.local: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your Supabase project (Settings → API). Save the file, stop the dev server (Ctrl+C), run npm run dev again, then click Submit once more.",
       );
       return;
     }
@@ -159,7 +158,7 @@ export function EmailPasswordForm({ mode, backendReady = true }: EmailPasswordFo
           htmlFor="orbit-pw-password"
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
         >
-          {mode === "signup" ? "Password" : "Password"}
+          Password
         </label>
         <input
           id="orbit-pw-password"
@@ -219,7 +218,7 @@ export function EmailPasswordForm({ mode, backendReady = true }: EmailPasswordFo
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="w-full cursor-pointer rounded-xl bg-zinc-900 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-wait disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
       >
         {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Submit"}
       </button>

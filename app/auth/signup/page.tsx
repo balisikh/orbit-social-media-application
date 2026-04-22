@@ -23,7 +23,7 @@ export default function SignupPage() {
             </p>
           )}
         </div>
-        <EmailPasswordForm mode="signup" backendReady={ready} />
+        <EmailPasswordForm mode="signup" />
         <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
           <Link href="/" className="font-medium text-violet-600 underline dark:text-violet-400">
             Back to home

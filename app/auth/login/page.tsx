@@ -40,7 +40,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Your password was updated. Sign in below with your email and new password.
           </p>
         ) : null}
-        <EmailPasswordForm mode="signin" backendReady={ready} />
+        <EmailPasswordForm mode="signin" />
         <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
           <Link href="/" className="font-medium text-violet-600 underline dark:text-violet-400">
             Back to home
