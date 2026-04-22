@@ -51,15 +51,36 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
       }
     }
 
-    if (!getSupabasePublicConfig().ready) {
-      setError(
-        "The sign-in service is not connected yet. In your project folder, edit .env.local: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your Supabase project (Settings → API). Save the file, stop the dev server (Ctrl+C), run npm run dev again, then click Submit once more.",
-      );
+    const ready = getSupabasePublicConfig().ready;
+    const isDev = process.env.NODE_ENV === "development";
+
+    if (!ready && !isDev) {
+      setError("Sign-in is not available on this server.");
       return;
     }
 
     setLoading(true);
     try {
+      if (!ready && isDev) {
+        const handle = mode === "signup" ? username.trim().toLowerCase() : undefined;
+        const res = await fetch("/api/orbit-dev-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: trimmedEmail,
+            ...(handle ? { username: handle } : {}),
+          }),
+        });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => null)) as { error?: string } | null;
+          setError(j?.error ?? "Could not start a local session.");
+          return;
+        }
+        router.push("/feed");
+        router.refresh();
+        return;
+      }
+
       const supabase = createClient();
       const origin = window.location.origin;
 
@@ -69,7 +90,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
           email: trimmedEmail,
           password,
           options: {
-            emailRedirectTo: `${origin}/auth/callback?next=/me`,
+            emailRedirectTo: `${origin}/auth/callback?next=/feed`,
             data: {
               username: handle,
             },
@@ -80,7 +101,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
           return;
         }
         if (data.session) {
-          router.push("/me");
+          router.push("/feed");
           router.refresh();
           return;
         }
@@ -98,7 +119,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
         setError(friendlySignInError(signInError.message));
         return;
       }
-      router.push("/me");
+      router.push("/feed");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

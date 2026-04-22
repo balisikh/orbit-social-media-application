@@ -18,9 +18,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             Sign in to Orbit
           </h1>
-          {!ready ? (
+          {!ready && process.env.NODE_ENV === "development" ? (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              This is the same sign-in layout you will use once the app is connected on this machine.
+              Local development: you can submit the form without Supabase keys to try the app (preview session only).
+            </p>
+          ) : !ready ? (
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Sign-in needs the app to be configured on this server.
             </p>
           ) : (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
