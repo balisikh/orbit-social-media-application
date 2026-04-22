@@ -3,7 +3,7 @@ import { EmailPasswordForm } from "@/components/auth/email-password-form";
 import { SupabaseEnvSetup } from "@/components/auth/supabase-env-setup";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const { ready } = getSupabasePublicConfig();
 
   return (
@@ -11,28 +11,28 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8 text-center">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Sign in to Orbit
+            Create your Orbit account
           </h1>
           {!ready ? (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              This is the same sign-in layout you will use once the app is connected on this machine.
+              Registration will match the form below once this app is connected on this machine.
             </p>
           ) : (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Enter your email and password, then submit.
+              Choose your email, username, and password.
             </p>
           )}
         </div>
-        {!ready ? <SupabaseEnvSetup /> : <EmailPasswordForm mode="signin" />}
+        {!ready ? <SupabaseEnvSetup variant="signup" /> : <EmailPasswordForm mode="signup" />}
         <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
           <Link href="/" className="font-medium text-violet-600 underline dark:text-violet-400">
             Back to home
           </Link>
           {ready ? (
             <p>
-              New to Orbit?{" "}
-              <Link href="/auth/signup" className="font-medium text-violet-600 underline dark:text-violet-400">
-                Create an account
+              Already have an account?{" "}
+              <Link href="/auth/login" className="font-medium text-violet-600 underline dark:text-violet-400">
+                Sign in to Orbit
               </Link>
             </p>
           ) : null}

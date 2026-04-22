@@ -1,0 +1,218 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+export type EmailPasswordMode = "signin" | "signup";
+
+type EmailPasswordFormProps = {
+  mode: EmailPasswordMode;
+};
+
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
+
+export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setError("Enter your email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (mode === "signup") {
+      const u = username.trim();
+      if (!USERNAME_RE.test(u)) {
+        setError("Username must be 3–30 characters: letters, numbers, and underscores only.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const origin = window.location.origin;
+
+      if (mode === "signup") {
+        const handle = username.trim().toLowerCase();
+        const { data, error: signError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+          options: {
+            emailRedirectTo: `${origin}/auth/callback?next=/me`,
+            data: {
+              username: handle,
+            },
+          },
+        });
+        if (signError) {
+          setError(signError.message);
+          return;
+        }
+        if (data.session) {
+          router.push("/me");
+          router.refresh();
+          return;
+        }
+        setInfo(
+          "Check your email to confirm your account, then sign in. If email confirmation is off in Supabase, you can sign in now.",
+        );
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+      router.push("/me");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="w-full space-y-4 text-left">
+      <div>
+        <label
+          htmlFor="orbit-pw-email"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Email
+        </label>
+        <input
+          id="orbit-pw-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+        />
+      </div>
+
+      {mode === "signup" ? (
+        <div>
+          <label
+            htmlFor="orbit-username"
+            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            Username
+          </label>
+          <input
+            id="orbit-username"
+            name="username"
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
+            disabled={loading}
+            placeholder="your_handle"
+            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+          />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            3–30 characters: letters, numbers, underscores.
+          </p>
+        </div>
+      ) : null}
+
+      <div>
+        <label
+          htmlFor="orbit-pw-password"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          {mode === "signup" ? "Password" : "Password"}
+        </label>
+        <input
+          id="orbit-pw-password"
+          name="password"
+          type="password"
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
+          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+        />
+      </div>
+
+      {mode === "signup" ? (
+        <div>
+          <label
+            htmlFor="orbit-pw-confirm"
+            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            Confirm password
+          </label>
+          <input
+            id="orbit-pw-confirm"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+          />
+        </div>
+      ) : null}
+
+      {mode === "signin" ? (
+        <p className="text-right text-sm">
+          <Link
+            href="/auth/forgot-password"
+            className="font-medium text-violet-600 underline dark:text-violet-400"
+          >
+            Reset password
+          </Link>
+        </p>
+      ) : null}
+
+      {error ? (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {info ? (
+        <p className="text-sm text-emerald-800 dark:text-emerald-200" role="status">
+          {info}
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+      >
+        {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Submit"}
+      </button>
+    </form>
+  );
+}

@@ -1,24 +1,25 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 
 export default async function MePage() {
   let email: string | null = null;
-  let configured = false;
+  let username: string | null = null;
+  const configured = getSupabasePublicConfig().ready;
 
   try {
-    if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ) {
-      configured = true;
+    if (configured) {
       const supabase = await createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
       email = user?.email ?? null;
+      const raw = user?.user_metadata?.username;
+      username = typeof raw === "string" && raw.length > 0 ? raw : null;
     }
   } catch {
-    configured = false;
+    email = null;
+    username = null;
   }
 
   return (
@@ -50,9 +51,18 @@ export default async function MePage() {
           </p>
         ) : email ? (
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            Signed in as <span className="font-medium">{email}</span>. Add a
-            handle column and link to{" "}
-            <Link href="/u/you" className="font-medium text-violet-600 underline dark:text-violet-400">
+            Signed in as <span className="font-medium">{email}</span>
+            {username ? (
+              <>
+                {" "}
+                (<span className="font-medium">@{username}</span>)
+              </>
+            ) : null}
+            . Open{" "}
+            <Link
+              href={username ? `/u/${encodeURIComponent(username)}` : "/u/you"}
+              className="font-medium text-violet-600 underline dark:text-violet-400"
+            >
               your public page
             </Link>
             .
