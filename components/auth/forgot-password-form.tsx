@@ -49,17 +49,9 @@ export function ForgotPasswordForm() {
       </div>
       {sent ? (
         <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
-          If an account exists for <span className="font-medium">{email}</span>, you will receive a reset
-          link shortly. Add your{" "}
-          <code className="rounded bg-emerald-100/80 px-1 text-xs dark:bg-emerald-900/60">
-            /auth/callback
-          </code>{" "}
-          and{" "}
-          <code className="rounded bg-emerald-100/80 px-1 text-xs dark:bg-emerald-900/60">
-            /auth/update-password
-          </code>{" "}
-          URLs under Supabase Authentication → URL configuration → Redirect URLs if the link does not
-          work.
+          If an account exists for <span className="font-medium">{email}</span>, you will receive an email
+          with a link. Open it, set a new password (twice to confirm), then sign in on the login page with
+          your email and new password.
         </p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4 text-left">

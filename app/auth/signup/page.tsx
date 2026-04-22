@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { EmailPasswordForm } from "@/components/auth/email-password-form";
-import { SupabaseEnvSetup } from "@/components/auth/supabase-env-setup";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 
 export default function SignupPage() {
@@ -19,23 +18,22 @@ export default function SignupPage() {
             </p>
           ) : (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Choose your email, username, and password.
+              One-time registration: email, username, password, and confirm password. After that, use Log in on the home
+              page; use Reset password if you forget your password.
             </p>
           )}
         </div>
-        {!ready ? <SupabaseEnvSetup variant="signup" /> : <EmailPasswordForm mode="signup" />}
+        <EmailPasswordForm mode="signup" backendReady={ready} />
         <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
           <Link href="/" className="font-medium text-violet-600 underline dark:text-violet-400">
             Back to home
           </Link>
-          {ready ? (
-            <p>
-              Already have an account?{" "}
-              <Link href="/auth/login" className="font-medium text-violet-600 underline dark:text-violet-400">
-                Sign in to Orbit
-              </Link>
-            </p>
-          ) : null}
+          <p>
+            Already have an account?{" "}
+            <Link href="/auth/login" className="font-medium text-violet-600 underline dark:text-violet-400">
+              Sign in to Orbit
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 export function UpdatePasswordForm() {
   const router = useRouter();
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -28,6 +29,10 @@ export function UpdatePasswordForm() {
       setError("Password must be at least 6 characters.");
       return;
     }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Type the same new password twice.");
+      return;
+    }
     setLoading(true);
     try {
       const supabase = createClient();
@@ -36,7 +41,8 @@ export function UpdatePasswordForm() {
         setError(updateError.message);
         return;
       }
-      router.push("/me");
+      await supabase.auth.signOut();
+      router.push("/auth/login?message=password-updated");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -72,7 +78,9 @@ export function UpdatePasswordForm() {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           New password
         </h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Choose a password for your account.</p>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Enter and confirm your new password. You will be signed out and can log in again with this password.
+        </p>
       </div>
       <form onSubmit={onSubmit} className="space-y-4 text-left">
         <div>
@@ -92,6 +100,23 @@ export function UpdatePasswordForm() {
             className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
           />
         </div>
+        <div>
+          <label
+            htmlFor="confirm-new-password"
+            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            Confirm new password
+          </label>
+          <input
+            id="confirm-new-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+          />
+        </div>
         {error ? (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">
             {error}
@@ -102,7 +127,7 @@ export function UpdatePasswordForm() {
           disabled={loading}
           className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
-          {loading ? "Saving…" : "Update password"}
+          {loading ? "Saving…" : "Save password and return to sign in"}
         </button>
       </form>
     </div>

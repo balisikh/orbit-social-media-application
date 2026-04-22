@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { EmailPasswordForm } from "@/components/auth/email-password-form";
-import { SupabaseEnvSetup } from "@/components/auth/supabase-env-setup";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{ message?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { ready } = getSupabasePublicConfig();
+  const { message } = await searchParams;
+  const showPasswordUpdated = ready && message === "password-updated";
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center px-4">
@@ -19,23 +24,33 @@ export default function LoginPage() {
             </p>
           ) : (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Enter your email and password, then submit.
+              Enter your email and password, then submit. If your password is wrong, use{" "}
+              <Link href="/auth/forgot-password" className="font-medium text-violet-600 underline dark:text-violet-400">
+                Reset password
+              </Link>
+              .
             </p>
           )}
         </div>
-        {!ready ? <SupabaseEnvSetup /> : <EmailPasswordForm mode="signin" />}
+        {showPasswordUpdated ? (
+          <p
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100"
+            role="status"
+          >
+            Your password was updated. Sign in below with your email and new password.
+          </p>
+        ) : null}
+        <EmailPasswordForm mode="signin" backendReady={ready} />
         <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
           <Link href="/" className="font-medium text-violet-600 underline dark:text-violet-400">
             Back to home
           </Link>
-          {ready ? (
-            <p>
-              New to Orbit?{" "}
-              <Link href="/auth/signup" className="font-medium text-violet-600 underline dark:text-violet-400">
-                Create an account
-              </Link>
-            </p>
-          ) : null}
+          <p>
+            New to Orbit?{" "}
+            <Link href="/auth/signup" className="font-medium text-violet-600 underline dark:text-violet-400">
+              Create an account
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -78,6 +78,47 @@ export default function HomePage() {
               Sign up
             </Link>
           </div>
+
+          <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-8">
+            <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              How Log in and Sign up work
+            </h2>
+            <div className="mt-6 grid gap-8 sm:grid-cols-2">
+              <div>
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Log in</h3>
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  <li>
+                    Press <strong className="text-zinc-800 dark:text-zinc-200">Log in</strong>, enter your email and
+                    password, then Submit.
+                  </li>
+                  <li>
+                    If your password is wrong, open{" "}
+                    <Link
+                      href="/auth/forgot-password"
+                      className="font-medium text-violet-600 underline dark:text-violet-400"
+                    >
+                      Reset password
+                    </Link>
+                    , enter the same email, and request the link.
+                  </li>
+                  <li>
+                    In the email, open the link, set a <strong className="text-zinc-800 dark:text-zinc-200">new</strong>{" "}
+                    password and <strong className="text-zinc-800 dark:text-zinc-200">confirm</strong> it, then return
+                    here to sign in with your email and new password.
+                  </li>
+                </ol>
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Sign up</h3>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  Press <strong className="text-zinc-800 dark:text-zinc-200">Sign up</strong> once to create your account
+                  (email, username, password, and confirm password). After that, use{" "}
+                  <strong className="text-zinc-800 dark:text-zinc-200">Log in</strong> whenever you come back. If you
+                  forget your password, use the reset flow on the left.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <ul className="mx-auto mt-12 grid w-full max-w-4xl gap-4 sm:grid-cols-2">

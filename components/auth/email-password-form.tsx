@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { friendlySignInError } from "@/lib/auth/sign-in-errors";
 import { createClient } from "@/lib/supabase/client";
 
 export type EmailPasswordMode = "signin" | "signup";
 
 type EmailPasswordFormProps = {
   mode: EmailPasswordMode;
+  /** When false, form fields work but Submit explains that Supabase env is missing (from server `ready`). */
+  backendReady?: boolean;
 };
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 
-export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
+export function EmailPasswordForm({ mode, backendReady = true }: EmailPasswordFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -47,6 +50,13 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
         setError("Passwords do not match.");
         return;
       }
+    }
+
+    if (!backendReady) {
+      setError(
+        "Sign-in is not enabled on this installation yet. Add the missing values to .env.local, restart npm run dev, then reload this page.",
+      );
+      return;
     }
 
     setLoading(true);
@@ -86,7 +96,7 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
         password,
       });
       if (signInError) {
-        setError(signInError.message);
+        setError(friendlySignInError(signInError.message));
         return;
       }
       router.push("/me");
