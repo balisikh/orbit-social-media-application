@@ -12,27 +12,29 @@ const destinations = [
   {
     href: "/feed",
     title: "Feed",
-    description: "Photo-first grid for posts from people you follow — preview layout today, real posts when your API is connected.",
+    description:
+      "Scroll posts, like, comment, and share — in local preview your uploads live here; with cloud hosting this becomes your real follow graph.",
   },
   {
     href: "/reels",
     title: "Reels",
-    description: "Vertical short video with a reels-style player — route and previews are in place for media next.",
+    description: "Full-height short video with swipe, sound, and reactions — add reels locally today, sync later when you wire up storage.",
   },
   {
     href: "/messages",
     title: "Messages",
-    description: "Inbox and thread UI you can click through now; send and sync arrive with backend messaging.",
+    description: "Thread-style inbox you can open now; delivery and read receipts ship when messaging is connected to your backend.",
   },
   {
     href: "/me",
     title: "Profile",
-    description: "Your @handle, bio, avatar, and public page — follower counts and post grid fill in as data ships.",
+    description: "Display name, @handle, avatar, and your post grid — edit locally now, then persist to the cloud when hosting is on.",
   },
 ] as const;
 
 export default async function HomePage() {
-  const { email, mode, handle } = await getHeaderSession();
+  const { email, mode, handle, displayName } = await getHeaderSession();
+  const signedIn = Boolean(email);
 
   return (
     <div className="flex min-h-full flex-col bg-[color:var(--orbit-surface)]">
@@ -41,7 +43,12 @@ export default async function HomePage() {
           <Link href="/" className="font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             Orbit
           </Link>
-          <HeaderAuthActions signedInEmail={email} sessionMode={mode} signedInHandle={handle} />
+          <HeaderAuthActions
+            signedInEmail={email}
+            sessionMode={mode}
+            signedInHandle={handle}
+            signedInDisplayName={displayName}
+          />
         </div>
       </header>
 
@@ -51,67 +58,67 @@ export default async function HomePage() {
             Photo-first social
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-900 sm:text-5xl dark:text-zinc-50">
-            Welcome to Orbit
+            {signedIn ? "Welcome back" : "Welcome to Orbit"}
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-            Orbit is the app shell: use this home to sign in, then jump into Feed, Reels, Messages, or Profile. Each area
-            shows what&apos;s live today and what&apos;s on the roadmap.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/auth/login"
-              className="inline-flex min-h-11 min-w-[7.5rem] items-center justify-center rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="inline-flex min-h-11 min-w-[7.5rem] items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              Sign up
-            </Link>
-          </div>
-
-          <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-8">
-            <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              How Log in and Sign up work
-            </h2>
-            <div className="mt-6 grid gap-8 sm:grid-cols-2">
-              <div>
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Log in</h3>
-                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                  <li>
-                    Press <strong className="text-zinc-800 dark:text-zinc-200">Log in</strong>, enter your email and
-                    password, then Submit.
-                  </li>
-                  <li>
-                    If your password is wrong, open{" "}
-                    <Link
-                      href="/auth/forgot-password"
-                      className="font-medium text-violet-600 underline dark:text-violet-400"
-                    >
-                      Reset password
-                    </Link>
-                    , enter the same email, and request the link.
-                  </li>
-                  <li>
-                    In the email, open the link, set a <strong className="text-zinc-800 dark:text-zinc-200">new</strong>{" "}
-                    password and <strong className="text-zinc-800 dark:text-zinc-200">confirm</strong> it, then return
-                    here to sign in with your email and new password.
-                  </li>
-                </ol>
+          {signedIn ? (
+            <>
+              <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
+                {"You're signed in as "}
+                <strong className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {handle ? `@${handle}` : email}
+                </strong>
+                . Pick up where you left off — posts and reels in the feed, short video in Reels, chats in Messages, and
+                your look on Profile.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/feed"
+                  className="inline-flex min-h-11 min-w-[10rem] items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                >
+                  Open Feed
+                </Link>
+                <Link
+                  href="/reels"
+                  className="inline-flex min-h-11 min-w-[10rem] items-center justify-center rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+                >
+                  Open Reels
+                </Link>
+                <Link
+                  href="/messages"
+                  className="inline-flex min-h-11 min-w-[10rem] items-center justify-center rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+                >
+                  Messages
+                </Link>
+                <Link
+                  href="/me"
+                  className="inline-flex min-h-11 min-w-[10rem] items-center justify-center rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+                >
+                  Your profile
+                </Link>
               </div>
-              <div>
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Sign up</h3>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                  Press <strong className="text-zinc-800 dark:text-zinc-200">Sign up</strong> once to create your account
-                  (email, username, password, and confirm password). After that, use{" "}
-                  <strong className="text-zinc-800 dark:text-zinc-200">Log in</strong> whenever you come back. If you
-                  forget your password, use the reset flow on the left.
-                </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
+                Orbit is the app shell: use this home to sign in, then jump into Feed, Reels, Messages, or Profile. Each
+                area shows what&apos;s live today and what&apos;s on the roadmap.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/auth/login"
+                  className="inline-flex min-h-11 min-w-[7.5rem] items-center justify-center rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex min-h-11 min-w-[7.5rem] items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                >
+                  Sign up
+                </Link>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         <ul className="mx-auto mt-12 grid w-full max-w-4xl gap-4 sm:grid-cols-2">
@@ -132,14 +139,6 @@ export default async function HomePage() {
             </li>
           ))}
         </ul>
-
-        <p className="mx-auto mt-10 max-w-lg text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Public profiles (try{" "}
-          <Link href="/u/you" className="font-medium text-violet-600 underline dark:text-violet-400">
-            @you
-          </Link>
-          ) load from your Orbit database when hosting is on; until then you&apos;ll see a layout preview on that route.
-        </p>
       </main>
     </div>
   );

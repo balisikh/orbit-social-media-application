@@ -6,6 +6,7 @@ export type OrbitDevSessionPayload = {
   email: string;
   username: string | null;
   displayName?: string | null;
+  bio?: string | null;
 };
 
 export function encodeDevSessionPayload(payload: OrbitDevSessionPayload): string {
@@ -20,11 +21,13 @@ export function decodeDevSessionPayload(raw: string): OrbitDevSessionPayload | n
     const email = (data as { email?: unknown }).email;
     const username = (data as { username?: unknown }).username;
     const displayName = (data as { displayName?: unknown }).displayName;
+    const bio = (data as { bio?: unknown }).bio;
     if (typeof email !== "string" || !email) return null;
     return {
       email,
       username: typeof username === "string" && username.length > 0 ? username : null,
       displayName: typeof displayName === "string" && displayName.trim().length > 0 ? displayName.trim() : null,
+      bio: typeof bio === "string" && bio.trim().length > 0 ? bio.trim() : null,
     };
   } catch {
     return null;

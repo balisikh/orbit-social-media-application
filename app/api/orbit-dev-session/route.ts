@@ -16,9 +16,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cloud sign-in is already configured for this app." }, { status: 400 });
   }
 
-  let body: { email?: string; username?: string | null; displayName?: string | null };
+  let body: { email?: string; username?: string | null; displayName?: string | null; bio?: string | null };
   try {
-    body = (await request.json()) as { email?: string; username?: string | null; displayName?: string | null };
+    body = (await request.json()) as {
+      email?: string;
+      username?: string | null;
+      displayName?: string | null;
+      bio?: string | null;
+    };
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
@@ -32,8 +37,9 @@ export async function POST(request: Request) {
       : null;
   const displayName =
     typeof body.displayName === "string" && body.displayName.trim().length > 0 ? body.displayName.trim() : null;
+  const bio = typeof body.bio === "string" && body.bio.trim().length > 0 ? body.bio.trim() : null;
 
-  const value = encodeDevSessionPayload({ email, username, displayName });
+  const value = encodeDevSessionPayload({ email, username, displayName, bio });
   const jar = await cookies();
   jar.set(ORBIT_DEV_SESSION_COOKIE, value, {
     httpOnly: true,

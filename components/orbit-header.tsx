@@ -32,9 +32,15 @@ type OrbitHeaderProps = {
   signedInEmail: string | null;
   sessionMode: HeaderSessionMode;
   signedInHandle: string | null;
+  signedInDisplayName: string | null;
 };
 
-export function OrbitHeader({ signedInEmail, sessionMode, signedInHandle }: OrbitHeaderProps) {
+export function OrbitHeader({
+  signedInEmail,
+  sessionMode,
+  signedInHandle,
+  signedInDisplayName,
+}: OrbitHeaderProps) {
   const pathname = usePathname();
   const signedIn = Boolean(signedInEmail && sessionMode);
 
@@ -76,6 +82,7 @@ export function OrbitHeader({ signedInEmail, sessionMode, signedInHandle }: Orbi
             signedInEmail={signedInEmail}
             sessionMode={sessionMode}
             signedInHandle={signedInHandle}
+            signedInDisplayName={signedInDisplayName}
           />
         </nav>
       </div>

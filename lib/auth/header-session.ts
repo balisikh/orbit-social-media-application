@@ -11,6 +11,8 @@ export type HeaderSession = {
   mode: HeaderSessionMode;
   /** Signup @handle from profile row and/or auth metadata (for nav + menu). */
   handle: string | null;
+  /** Profile display name when set (Supabase profile or dev session). */
+  displayName: string | null;
 };
 
 /** Who is signed in for header UI (Supabase session or local dev cookie), including @handle when known. */
@@ -27,7 +29,8 @@ export async function getHeaderSession(): Promise<HeaderSession> {
         const profile = await getProfileByUserId(supabase, user.id);
         const dbHandle = profile?.handle ?? null;
         const handle = dbHandle ?? metaHandle;
-        return { email: user.email, mode: "supabase", handle };
+        const displayName = profile?.display_name?.trim() || null;
+        return { email: user.email, mode: "supabase", handle, displayName };
       }
     } catch {
       /* ignore */
@@ -36,7 +39,8 @@ export async function getHeaderSession(): Promise<HeaderSession> {
   const dev = await readDevSessionFromCookies();
   if (dev?.email) {
     const handle = dev.username ? parseUsername(dev.username) : null;
-    return { email: dev.email, mode: "dev", handle };
+    const displayName = dev.displayName?.trim() || null;
+    return { email: dev.email, mode: "dev", handle, displayName };
   }
-  return { email: null, mode: null, handle: null };
+  return { email: null, mode: null, handle: null, displayName: null };
 }
