@@ -8,10 +8,15 @@ export function ProfilePostGrid({ isOwner, postCount }: ProfilePostGridProps) {
     return (
       <div>
         <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Posts</h2>
-        <div className="mt-2 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-14 text-center text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-400">
-          {isOwner
-            ? "No posts yet. When your feed is connected, anything you publish will appear in this grid on your profile."
-            : "No posts yet for this profile."}
+        <div className="mt-2 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-10 text-center dark:border-zinc-800 dark:bg-zinc-900/30">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            {isOwner ? "No posts yet" : "No posts to show"}
+          </p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            {isOwner
+              ? "Your posts will show up here as soon as your feed is connected."
+              : "This profile hasn’t published any posts yet."}
+          </p>
         </div>
       </div>
     );

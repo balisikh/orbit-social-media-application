@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SignOutDevButton } from "@/components/auth/sign-out-dev-button";
-import { SetUsernameForm } from "@/components/me/set-username-form";
+import { SetProfileBasicsForm } from "@/components/me/set-profile-basics-form";
 import { ProfileHeader, profileDefaultActions } from "@/components/profile/profile-header";
 import { ProfilePostGrid } from "@/components/profile/profile-post-grid";
 import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
@@ -57,6 +57,7 @@ export default async function MePage() {
     source = "dev";
     email = devSession.email;
     metaHandle = devSession.username ? parseUsername(devSession.username) : null;
+    displayName = devSession.displayName?.trim() || null;
   }
 
   const signedIn = Boolean(email);
@@ -68,12 +69,16 @@ export default async function MePage() {
       {signedIn ? (
         <>
           {source === "dev" ? (
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              <span className="mr-1.5 inline-block rounded-md bg-zinc-200 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                Local
-              </span>
-              Same <strong className="font-medium text-zinc-800 dark:text-zinc-200">local preview</strong> session described in your account menu (top right). Turn on cloud hosting there when you want accounts and profiles saved remotely.
-            </p>
+            <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                  Local preview
+                </span>
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  You’re signed in locally. Enable cloud hosting in the account menu (top right) to save your profile and posts remotely.
+                </span>
+              </p>
+            </div>
           ) : null}
 
           {profileSyncError ? (
@@ -95,17 +100,17 @@ export default async function MePage() {
             ownerMeta={{ label: "Email", value: email! }}
             eyebrow="Your profile"
             stats={{ posts: 0, followers: 0, following: 0 }}
+            usernameUnderStats={!displayName && handle ? `@${handle}` : null}
             actions={profileDefaultActions({ viewerIsOwner: true, publicHref })}
           />
 
-          {!handle && source === "supabase" ? (
-            <div className="max-w-xl space-y-2">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Your @username is stored on your account separately from your email. If it is missing, set it below —
-                it will sync to your public Orbit profile.
-              </p>
-              <SetUsernameForm />
-            </div>
+          {source ? (
+            <SetProfileBasicsForm
+              mode={source}
+              email={email!}
+              currentHandle={handle}
+              currentDisplayName={displayName}
+            />
           ) : null}
 
           <ProfilePostGrid isOwner postCount={0} />

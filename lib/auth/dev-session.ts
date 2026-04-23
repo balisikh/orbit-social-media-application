@@ -5,6 +5,7 @@ export const ORBIT_DEV_SESSION_COOKIE = "orbit_dev_session";
 export type OrbitDevSessionPayload = {
   email: string;
   username: string | null;
+  displayName?: string | null;
 };
 
 export function encodeDevSessionPayload(payload: OrbitDevSessionPayload): string {
@@ -18,10 +19,12 @@ export function decodeDevSessionPayload(raw: string): OrbitDevSessionPayload | n
     if (!data || typeof data !== "object") return null;
     const email = (data as { email?: unknown }).email;
     const username = (data as { username?: unknown }).username;
+    const displayName = (data as { displayName?: unknown }).displayName;
     if (typeof email !== "string" || !email) return null;
     return {
       email,
       username: typeof username === "string" && username.length > 0 ? username : null,
+      displayName: typeof displayName === "string" && displayName.trim().length > 0 ? displayName.trim() : null,
     };
   } catch {
     return null;

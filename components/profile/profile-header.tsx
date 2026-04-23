@@ -10,6 +10,8 @@ export type ProfileHeaderProps = {
   ownerMeta?: { label: string; value: string } | null;
   eyebrow?: string;
   stats: { posts: number; followers: number; following: number };
+  /** Optional username label shown under the stats row (e.g. "@bal"). */
+  usernameUnderStats?: string | null;
   actions?: React.ReactNode;
 };
 
@@ -22,10 +24,12 @@ export function ProfileHeader({
   ownerMeta,
   eyebrow,
   stats,
+  usernameUnderStats,
   actions,
 }: ProfileHeaderProps) {
-  const title = handle ? `@${handle}` : "Your account";
-  const subtitle = displayName && handle && displayName.toLowerCase() !== `@${handle}`.toLowerCase() ? displayName : null;
+  const cleanedDisplayName = displayName?.trim() || null;
+  const title = cleanedDisplayName ?? (handle ? `@${handle}` : "Your account");
+  const subtitle = cleanedDisplayName && handle ? `@${handle}` : null;
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -78,6 +82,9 @@ export function ProfileHeader({
             <strong className="text-zinc-900 dark:text-zinc-50">{stats.following}</strong> following
           </span>
         </div>
+        {usernameUnderStats ? (
+          <p className="mt-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{usernameUnderStats}</p>
+        ) : null}
         {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
       </div>
     </div>
