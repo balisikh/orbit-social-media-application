@@ -1,0 +1,23 @@
+/** Compact sticker set for local message preview (Unicode “stickers”). */
+export const MESSAGE_STICKERS = [
+  "🐶",
+  "🐱",
+  "🦊",
+  "🐸",
+  "🐼",
+  "🦄",
+  "🎉",
+  "🎈",
+  "✨",
+  "🔥",
+  "💯",
+  "🌈",
+  "⭐",
+  "💫",
+  "🍕",
+  "🍦",
+  "⚽",
+  "🎮",
+  "🎸",
+  "📷",
+] as const;
