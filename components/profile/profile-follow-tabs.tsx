@@ -19,10 +19,17 @@ type Props = {
   handle: string | null;
 };
 
+function initialTabFromHash(showFollowers: boolean): Tab {
+  if (typeof window === "undefined") return showFollowers ? "followers" : "following";
+  const fromHash = tabFromHash(window.location.hash);
+  if (fromHash === "followers" && !showFollowers) return "following";
+  if (fromHash) return fromHash;
+  return showFollowers ? "followers" : "following";
+}
+
 export function ProfileFollowTabs({ viewerKey, handle }: Props) {
   const showFollowers = Boolean(handle);
-  const fallbackTab: Tab = showFollowers ? "followers" : "following";
-  const [tab, setTab] = useState<Tab>(fallbackTab);
+  const [tab, setTab] = useState<Tab>(() => initialTabFromHash(showFollowers));
 
   const syncFromHash = useCallback(() => {
     const fromHash = tabFromHash(typeof window !== "undefined" ? window.location.hash : "");
@@ -35,7 +42,6 @@ export function ProfileFollowTabs({ viewerKey, handle }: Props) {
   }, [showFollowers]);
 
   useEffect(() => {
-    syncFromHash();
     window.addEventListener("hashchange", syncFromHash);
     return () => window.removeEventListener("hashchange", syncFromHash);
   }, [syncFromHash]);

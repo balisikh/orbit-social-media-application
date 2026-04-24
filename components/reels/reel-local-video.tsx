@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getReelVideoBlob } from "@/lib/reels/idb";
 import type { LocalReel } from "@/lib/reels/local";
 
@@ -13,17 +13,20 @@ type Props = {
 };
 
 export function ReelLocalVideo({ ownerKey, reel, className, controls = true, playsInline = true }: Props) {
-  const [src, setSrc] = useState<string | null>(() =>
-    reel.videoDataUrl?.startsWith("data:video/") ? reel.videoDataUrl : null,
+  const dataUrlSrc = useMemo(
+    () => (reel.videoDataUrl?.startsWith("data:video/") ? reel.videoDataUrl : null),
+    [reel.videoDataUrl],
   );
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (reel.videoDataUrl?.startsWith("data:video/")) {
-      setSrc(reel.videoDataUrl);
-      return;
-    }
-    if (!reel.videoBlobInIdb) {
-      setSrc(null);
+    if (dataUrlSrc || !reel.videoBlobInIdb) {
+      queueMicrotask(() => {
+        setBlobUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
+      });
       return;
     }
 
@@ -34,14 +37,16 @@ export function ReelLocalVideo({ ownerKey, reel, className, controls = true, pla
       const blob = await getReelVideoBlob(ownerKey, reel.id);
       if (cancelled || !blob) return;
       objectUrl = URL.createObjectURL(blob);
-      setSrc(objectUrl);
+      setBlobUrl(objectUrl);
     })();
 
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [ownerKey, reel.id, reel.videoBlobInIdb, reel.videoDataUrl]);
+  }, [dataUrlSrc, ownerKey, reel.id, reel.videoBlobInIdb]);
+
+  const src = dataUrlSrc ?? blobUrl;
 
   if (!src) {
     return (

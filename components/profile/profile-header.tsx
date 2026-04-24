@@ -116,7 +116,8 @@ export function profileDefaultActions(opts: {
   publicHref: string | null;
   showFollowMessage?: boolean;
 }) {
-  const { viewerIsOwner, publicHref, showFollowMessage = true } = opts;
+  const { viewerIsOwner, showFollowMessage = true } = opts;
+  void opts.publicHref;
   if (viewerIsOwner) {
     return (
       <>

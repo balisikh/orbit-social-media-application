@@ -30,14 +30,6 @@ async function fileToDataUrl(file: File): Promise<string> {
   return `data:${mime};base64,${base64}`;
 }
 
-function canBrowserPlayVideo(file: File): boolean {
-  if (typeof document === "undefined") return true;
-  const type = file.type?.trim();
-  if (!type) return true;
-  const el = document.createElement("video");
-  return Boolean(el.canPlayType(type));
-}
-
 function isHeicLike(file: File): boolean {
   const type = (file.type || "").toLowerCase();
   const name = (file.name || "").toLowerCase();

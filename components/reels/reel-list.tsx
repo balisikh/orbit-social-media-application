@@ -58,7 +58,6 @@ export function ReelList(props: Props) {
   const [resolvedVideoUrls, setResolvedVideoUrls] = useState<Record<string, string>>({});
   const resolveGenerationRef = useRef(0);
   const resolvedVideoUrlsRef = useRef<Record<string, string>>({});
-  resolvedVideoUrlsRef.current = resolvedVideoUrls;
   const [muted, setMuted] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentingId, setCommentingId] = useState<string | null>(null);
@@ -93,8 +92,12 @@ export function ReelList(props: Props) {
   }, [localOwnerKey]);
 
   useEffect(() => {
+    resolvedVideoUrlsRef.current = resolvedVideoUrls;
+  }, [resolvedVideoUrls]);
+
+  useEffect(() => {
     if (!localOwnerKey) {
-      setResolvedVideoUrls({});
+      queueMicrotask(() => setResolvedVideoUrls({}));
       return;
     }
     const ownerKey = localOwnerKey;
@@ -136,11 +139,13 @@ export function ReelList(props: Props) {
     })();
 
     return () => {
-      resolveGenerationRef.current++;
-      for (const u of Object.values(resolvedVideoUrlsRef.current)) {
+      const urlsSnapshot = resolvedVideoUrlsRef.current;
+      const genRef = resolveGenerationRef;
+      genRef.current += 1;
+      for (const u of Object.values(urlsSnapshot)) {
         if (u.startsWith("blob:")) URL.revokeObjectURL(u);
       }
-      setResolvedVideoUrls({});
+      queueMicrotask(() => setResolvedVideoUrls({}));
     };
   }, [localOwnerKey, localReels]);
 
