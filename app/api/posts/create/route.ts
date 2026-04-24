@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { PostAudience } from "@/lib/posts/types";
 
 type Body = {
   caption?: string | null;
   imageUrl?: string | null;
   imageDataUrl?: string | null;
+  audience?: unknown;
 };
+
+function cleanAudience(raw: unknown): PostAudience {
+  if (raw === "followers" || raw === "public") return raw;
+  return "public";
+}
 
 function cleanCaption(raw: unknown): string | null {
   if (raw == null) return null;
@@ -53,6 +60,7 @@ export async function POST(request: Request) {
 
   const caption = cleanCaption(body.caption);
   const image_url = cleanImageDataUrl(body.imageDataUrl) ?? cleanImageUrl(body.imageUrl);
+  const audience = cleanAudience(body.audience);
 
   if (!caption && !image_url) {
     return NextResponse.json({ error: "Add a caption or an image." }, { status: 400 });
@@ -64,9 +72,10 @@ export async function POST(request: Request) {
       user_id: user.id,
       caption,
       image_url,
+      audience,
       updated_at: new Date().toISOString(),
     })
-    .select("id, user_id, caption, image_url, created_at, updated_at")
+    .select("id, user_id, caption, image_url, audience, created_at, updated_at")
     .single();
 
   if (error || !data) {

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 import { addLocalPost } from "@/lib/posts/local";
+import type { PostAudience } from "@/lib/posts/types";
 import { ORBIT_DEMO_SLIDESHOW_POST_ID, upsertLocalDemoFeedExamples } from "@/lib/posts/sample-posts";
 
 type Props = {
@@ -125,6 +126,7 @@ export function CreatePostForm({ ownerKey, onCreatedHref }: Props) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audience, setAudience] = useState<PostAudience>("public");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -193,6 +195,7 @@ export function CreatePostForm({ ownerKey, onCreatedHref }: Props) {
           body: JSON.stringify({
             caption: nextCaption || null,
             imageDataUrl: firstImage,
+            audience,
           }),
         });
         if (!res.ok) {
@@ -217,6 +220,7 @@ export function CreatePostForm({ ownerKey, onCreatedHref }: Props) {
       setCaption("");
       setFiles([]);
       setAudioLabel("Original audio · Orbit");
+      setAudience("public");
       setOverlayText("");
       setFontSize(34);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -331,6 +335,48 @@ export function CreatePostForm({ ownerKey, onCreatedHref }: Props) {
           className="mt-1 w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
         />
       </div>
+
+      {configured ? (
+        <fieldset className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-900/30">
+          <legend className="px-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Who can see this?</legend>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Public posts appear on your profile for everyone. Followers-only posts show there only to people who follow
+            you, and appear in their home feed when they follow you.
+          </p>
+          <div className="mt-3 space-y-2" role="radiogroup" aria-label="Post visibility">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-transparent px-2 py-2 has-[:checked]:border-violet-300 has-[:checked]:bg-white dark:has-[:checked]:border-violet-800 dark:has-[:checked]:bg-zinc-950">
+              <input
+                type="radio"
+                name="post-audience"
+                className="mt-1"
+                checked={audience === "public"}
+                onChange={() => setAudience("public")}
+                disabled={loading}
+              />
+              <span>
+                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">Public</span>
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400">Anyone can view on your profile.</span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-transparent px-2 py-2 has-[:checked]:border-violet-300 has-[:checked]:bg-white dark:has-[:checked]:border-violet-800 dark:has-[:checked]:bg-zinc-950">
+              <input
+                type="radio"
+                name="post-audience"
+                className="mt-1"
+                checked={audience === "followers"}
+                onChange={() => setAudience("followers")}
+                disabled={loading}
+              />
+              <span>
+                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">Followers only</span>
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                  Hidden from non-followers; shown in followers’ feeds.
+                </span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+      ) : null}
 
       {files.some((f) => f.type?.startsWith("video/")) ? (
         <div>

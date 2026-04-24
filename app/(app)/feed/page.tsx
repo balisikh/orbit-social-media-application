@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { FeedPostList } from "@/components/feed/feed-post-list";
-import { getRecentPosts } from "@/lib/posts/queries";
+import { getFollowersFeedPosts } from "@/lib/posts/queries";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 import { createClient } from "@/lib/supabase/server";
 import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
 import { parseUsername } from "@/lib/auth/username";
+
+function authorLabelFromHandle(handle: string | null): string {
+  if (handle && handle.trim()) return `@${handle.trim()}`;
+  return "Someone";
+}
 
 export default async function FeedPage() {
   const configured = getSupabasePublicConfig().ready;
@@ -13,19 +18,42 @@ export default async function FeedPage() {
   let feed: React.ReactNode;
   if (configured) {
     const supabase = await createClient();
-    const posts = await getRecentPosts(supabase, { limit: 60 });
-    feed = (
-      <FeedPostList
-        mode="supabase"
-        posts={posts.map((p) => ({
-          id: p.id,
-          imageUrl: p.image_url ?? null,
-          caption: p.caption ?? null,
-          createdAt: p.created_at,
-          authorLabel: "Orbit",
-        }))}
-      />
-    );
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      feed = (
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-6 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300">
+          <p className="font-medium text-zinc-900 dark:text-zinc-100">Sign in to see your feed</p>
+          <p className="mt-2">
+            Your feed shows posts from people you follow and your own posts.{" "}
+            <Link href="/auth/login" className="font-semibold text-violet-600 underline dark:text-violet-400">
+              Log in
+            </Link>{" "}
+            or{" "}
+            <Link href="/auth/signup" className="font-semibold text-violet-600 underline dark:text-violet-400">
+              create an account
+            </Link>
+            .
+          </p>
+        </div>
+      );
+    } else {
+      const posts = await getFollowersFeedPosts(supabase, user.id, { limit: 60 });
+      feed = (
+        <FeedPostList
+          mode="supabase"
+          posts={posts.map((p) => ({
+            id: p.id,
+            imageUrl: p.image_url ?? null,
+            caption: p.caption ?? null,
+            createdAt: p.created_at,
+            authorLabel: authorLabelFromHandle(p.author_handle),
+          }))}
+        />
+      );
+    }
   } else {
     feed = (
       <FeedPostList
