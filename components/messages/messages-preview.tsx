@@ -15,20 +15,28 @@ import {
   type LocalThread,
 } from "@/lib/messages/local";
 import { isBlockedLocal } from "@/lib/follows/local";
+import { EmojiPicker } from "@/components/emoji/emoji-picker";
 
 type Props = {
   ownerKey: string;
+  /** Local preview only: lets you append a message as “them” to test bubbles and unread (no real delivery). */
+  showSimulatePeerReply?: boolean;
 };
 
 function clampText(s: string) {
   return s.replace(/\s+/g, " ").trim().slice(0, 2000);
 }
 
-export function MessagesPreview({ ownerKey }: Props) {
+export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Props) {
   const [threads, setThreads] = useState<LocalThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [composer, setComposer] = useState("");
+  const [theirReplyDraft, setTheirReplyDraft] = useState("");
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [peerEmojiOpen, setPeerEmojiOpen] = useState(false);
+  const emojiBtnRef = useRef<HTMLButtonElement | null>(null);
+  const peerEmojiBtnRef = useRef<HTMLButtonElement | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
 
@@ -232,12 +240,24 @@ export function MessagesPreview({ ownerKey }: Props) {
                   if (!th) return;
                   addMessage(ownerKey, th.id, { from: "you", text });
                   setComposer("");
+                  setEmojiOpen(false);
                   refresh();
                 }
               }}
               disabled={messagingBlocked}
               className="min-w-0 flex-1 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
             />
+            <button
+              ref={emojiBtnRef}
+              type="button"
+              disabled={messagingBlocked}
+              onClick={() => setEmojiOpen((o) => !o)}
+              className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+              aria-label="Open emoji picker"
+              title="Emoji"
+            >
+              🙂
+            </button>
             <button
               type="button"
               disabled={!clampText(composer) || messagingBlocked}
@@ -249,6 +269,7 @@ export function MessagesPreview({ ownerKey }: Props) {
                 if (!th) return;
                 addMessage(ownerKey, th.id, { from: "you", text });
                 setComposer("");
+                setEmojiOpen(false);
                 refresh();
               }}
               className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
@@ -256,8 +277,76 @@ export function MessagesPreview({ ownerKey }: Props) {
               Send
             </button>
           </div>
+          {emojiOpen && !messagingBlocked ? (
+            <EmojiPicker
+              anchorRef={emojiBtnRef as unknown as React.RefObject<HTMLElement | null>}
+              onClose={() => setEmojiOpen(false)}
+              onPick={(em) => setComposer((t) => `${t}${em}`)}
+            />
+          ) : null}
           {messagingBlocked ? (
             <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">You can’t message this user (you’re blocked).</p>
+          ) : null}
+          {showSimulatePeerReply && active && !messagingBlocked ? (
+            <div className="mt-3 border-t border-dashed border-zinc-200 pt-3 dark:border-zinc-700">
+              <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Real replies need a server: the other person&apos;s app never reads this browser&apos;s storage. For
+                layout testing only, add a message as <span className="font-medium text-zinc-700 dark:text-zinc-300">them</span>{" "}
+                (incoming bubble + unread).
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  value={theirReplyDraft}
+                  onChange={(e) => setTheirReplyDraft(e.target.value)}
+                  placeholder="Their reply (preview)…"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const text = clampText(theirReplyDraft);
+                      if (!text) return;
+                      addMessage(ownerKey, active.id, { from: "them", text });
+                      setTheirReplyDraft("");
+                      setPeerEmojiOpen(false);
+                      refresh();
+                    }
+                  }}
+                  className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                />
+                <button
+                  ref={peerEmojiBtnRef}
+                  type="button"
+                  onClick={() => setPeerEmojiOpen((o) => !o)}
+                  className="rounded-full border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  aria-label="Open emoji picker"
+                  title="Emoji"
+                >
+                  🙂
+                </button>
+                <button
+                  type="button"
+                  disabled={!clampText(theirReplyDraft)}
+                  onClick={() => {
+                    const text = clampText(theirReplyDraft);
+                    if (!text) return;
+                    addMessage(ownerKey, active.id, { from: "them", text });
+                    setTheirReplyDraft("");
+                    setPeerEmojiOpen(false);
+                    refresh();
+                  }}
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  Add as them
+                </button>
+              </div>
+              {peerEmojiOpen ? (
+                <EmojiPicker
+                  anchorRef={peerEmojiBtnRef as unknown as React.RefObject<HTMLElement | null>}
+                  onClose={() => setPeerEmojiOpen(false)}
+                  onPick={(em) => setTheirReplyDraft((t) => `${t}${em}`)}
+                />
+              ) : null}
+            </div>
           ) : null}
         </div>
       </div>

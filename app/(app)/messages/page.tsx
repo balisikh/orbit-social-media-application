@@ -31,7 +31,7 @@ export default async function MessagesPage() {
           when Orbit&apos;s messaging layer is hooked to your backend.
         </p>
       </div>
-      <MessagesPreview ownerKey={ownerKey} />
+      <MessagesPreview ownerKey={ownerKey} showSimulatePeerReply={!configured} />
     </div>
   );
 }
