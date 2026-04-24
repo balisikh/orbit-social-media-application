@@ -19,6 +19,17 @@ import {
 import { isBlockedLocal } from "@/lib/follows/local";
 import { EmojiPicker } from "@/components/emoji/emoji-picker";
 import { MESSAGE_STICKERS } from "@/lib/messages/stickers";
+import {
+  addComment,
+  clearReactions,
+  deleteComment,
+  readReactions,
+  toggleLike,
+} from "@/lib/reactions/local";
+
+/** Quick taps (heart is separate ♥ like button). */
+const MESSAGE_QUICK_EMOJIS = ["👍", "😂", "🔥", "😮"] as const;
+const MAX_GALLERY_VIDEO_BYTES = 2_800_000;
 
 type Props = {
   ownerKey: string;
@@ -32,25 +43,44 @@ function clampText(s: string) {
 
 const MAX_IMAGE_BYTES = 1_400_000;
 
-function readImageFileAsDataUrl(file: File): Promise<string> {
+function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("Please choose an image file."));
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      reject(new Error("Image is too large for local preview (try under ~1.3MB)."));
-      return;
-    }
     const reader = new FileReader();
     reader.onload = () => {
       const r = reader.result;
       if (typeof r === "string") resolve(r);
-      else reject(new Error("Could not read image."));
+      else reject(new Error("Could not read file."));
     };
-    reader.onerror = () => reject(new Error("Could not read image."));
+    reader.onerror = () => reject(new Error("Could not read file."));
     reader.readAsDataURL(file);
   });
+}
+
+async function readGalleryFileAsDataUrl(file: File): Promise<{ kind: "image" | "video"; url: string }> {
+  const name = file.name.toLowerCase();
+  const looksVideo = name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".mov") || name.endsWith(".m4v");
+  const looksImage =
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".png") ||
+    name.endsWith(".gif") ||
+    name.endsWith(".webp");
+
+  if (file.type.startsWith("image/") || (looksImage && !looksVideo)) {
+    if (file.size > MAX_IMAGE_BYTES) {
+      throw new Error("Image is too large for local preview (try under ~1.3MB).");
+    }
+    const url = await readFileAsDataUrl(file);
+    return { kind: "image", url };
+  }
+  if (file.type.startsWith("video/") || looksVideo) {
+    if (file.size > MAX_GALLERY_VIDEO_BYTES) {
+      throw new Error("Video is too large for local preview (try under ~2.7MB).");
+    }
+    const url = await readFileAsDataUrl(file);
+    return { kind: "video", url };
+  }
+  throw new Error("Please choose a photo or video from your gallery.");
 }
 
 function messageMatchesQuery(m: LocalMessage, q: string): boolean {
@@ -78,6 +108,18 @@ function MessageAttachments({ attachments }: { attachments: MessageAttachment[] 
             />
           );
         }
+        if (a.kind === "video") {
+          return (
+            <video
+              key={i}
+              src={a.url}
+              controls
+              playsInline
+              className="max-h-52 w-full max-w-[260px] rounded-xl bg-black/80"
+              preload="metadata"
+            />
+          );
+        }
         if (a.kind === "audio") {
           return <audio key={i} src={a.url} controls className="w-full max-w-[260px]" />;
         }
@@ -102,13 +144,14 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
   const [stickerOpen, setStickerOpen] = useState(false);
   const [peerStickerOpen, setPeerStickerOpen] = useState(false);
   const [recording, setRecording] = useState<"idle" | "composer" | "peer">("idle");
+  const [reactionTick, setReactionTick] = useState(0);
 
   const emojiBtnRef = useRef<HTMLButtonElement | null>(null);
   const peerEmojiBtnRef = useRef<HTMLButtonElement | null>(null);
   const stickerBtnRef = useRef<HTMLButtonElement | null>(null);
   const peerStickerBtnRef = useRef<HTMLButtonElement | null>(null);
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const peerImageInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const peerGalleryInputRef = useRef<HTMLInputElement | null>(null);
   const stickerWrapRef = useRef<HTMLDivElement | null>(null);
   const peerStickerWrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -219,6 +262,15 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
     };
   }, []);
 
+  useEffect(() => {
+    function onReactions(e: Event) {
+      const d = (e as CustomEvent<{ viewerKey?: string }>).detail?.viewerKey;
+      if (!d || d === ownerKey) setReactionTick((t) => t + 1);
+    }
+    window.addEventListener("orbit:reactions-updated", onReactions as EventListener);
+    return () => window.removeEventListener("orbit:reactions-updated", onReactions as EventListener);
+  }, [ownerKey]);
+
   const messagingBlocked = useMemo(() => {
     const h = active?.handle;
     if (!h) return false;
@@ -311,25 +363,26 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
     void startRecording(target);
   }
 
-  async function onPickImage(file: File | null, from: "you" | "them") {
+  async function onPickGallery(file: File | null, from: "you" | "them") {
     if (!file || messagingBlocked) return;
     try {
-      const url = await readImageFileAsDataUrl(file);
+      const { kind, url } = await readGalleryFileAsDataUrl(file);
       const caption = from === "you" ? clampText(composer) : clampText(theirReplyDraft);
+      const att: MessageAttachment = kind === "image" ? { kind: "image", url } : { kind: "video", url };
       if (from === "you") {
         const th = ensureActiveThread();
         if (!th) return;
         addMessage(ownerKey, th.id, {
           from: "you",
           text: caption,
-          attachments: [{ kind: "image", url }],
+          attachments: [att],
         });
         setComposer("");
       } else if (active) {
         addMessage(ownerKey, active.id, {
           from: "them",
           text: caption,
-          attachments: [{ kind: "image", url }],
+          attachments: [att],
         });
         setTheirReplyDraft("");
       }
@@ -339,7 +392,7 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
       setPeerStickerOpen(false);
       refresh();
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Could not add image.");
+      window.alert(e instanceof Error ? e.message : "Could not add from gallery.");
     }
   }
 
@@ -439,32 +492,172 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
           {active ? (
             active.messages.length ? (
-              active.messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`group relative max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                    m.from === "you"
-                      ? "ml-auto bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "mr-auto bg-white text-zinc-800 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
-                  }`}
-                >
-                  {m.attachments?.length ? (
-                    <MessageAttachments attachments={m.attachments} />
-                  ) : null}
-                  {m.text ? <p className={m.attachments?.length ? "mt-2 whitespace-pre-wrap break-words" : "whitespace-pre-wrap break-words"}>{m.text}</p> : null}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      deleteMessage(ownerKey, active.id, m.id);
-                      refresh();
-                    }}
-                    className="absolute -right-2 -top-2 rounded-full bg-black/50 px-2 py-1 text-[10px] font-semibold text-white opacity-0 backdrop-blur transition group-hover:opacity-100"
-                    title="Delete message"
+              active.messages.map((m) => {
+                void reactionTick;
+                const rx = readReactions(ownerKey, "message", m.id);
+                const authorLabel =
+                  m.from === "them"
+                    ? active.handle
+                      ? `@${active.handle}`
+                      : active.name
+                    : "Me";
+                const snippet =
+                  m.text.trim() ||
+                  (m.attachments?.some((a) => a.kind === "image" || a.kind === "video")
+                    ? "[photo/video]"
+                    : m.attachments?.some((a) => a.kind === "audio")
+                      ? "[voice]"
+                      : "[message]");
+                const isYou = m.from === "you";
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex max-w-[min(100%,22rem)] flex-col ${isYou ? "ml-auto items-end" : "mr-auto items-start"}`}
                   >
-                    Delete
-                  </button>
-                </div>
-              ))
+                    <div
+                      className={`w-full overflow-hidden rounded-2xl border shadow-sm ${
+                        isYou
+                          ? "border-zinc-700 bg-zinc-900 text-white dark:border-zinc-600 dark:bg-zinc-100 dark:text-zinc-900"
+                          : "border-zinc-200 bg-white text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                      }`}
+                    >
+                      <div className={`group relative px-3 py-2 text-sm ${isYou ? "" : ""}`}>
+                        {m.attachments?.length ? (
+                          <MessageAttachments attachments={m.attachments} />
+                        ) : null}
+                        {m.text ? (
+                          <p
+                            className={
+                              m.attachments?.length
+                                ? "mt-2 whitespace-pre-wrap break-words"
+                                : "whitespace-pre-wrap break-words"
+                            }
+                          >
+                            {m.text}
+                          </p>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearReactions(ownerKey, "message", m.id);
+                            deleteMessage(ownerKey, active.id, m.id);
+                            setReactionTick((x) => x + 1);
+                            refresh();
+                          }}
+                          className="absolute -right-1 -top-1 rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold text-white opacity-0 backdrop-blur transition group-hover:opacity-100"
+                          title="Delete message"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      <div
+                        className={`flex flex-wrap items-center gap-1 border-t px-2 py-1.5 text-xs ${
+                          isYou
+                            ? "border-zinc-600/80 bg-zinc-950/25 dark:border-zinc-500/40 dark:bg-zinc-200/30"
+                            : "border-zinc-100 bg-zinc-50/90 dark:border-zinc-700 dark:bg-zinc-900/60"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          className={`rounded-full px-2 py-1 font-semibold transition ${
+                            rx.liked
+                              ? "bg-rose-500/25 text-rose-100 ring-1 ring-rose-400/50 dark:bg-rose-600/20 dark:text-rose-900 dark:ring-rose-500/40"
+                              : isYou
+                                ? "bg-white/10 text-white hover:bg-white/15 dark:bg-zinc-900/40 dark:text-zinc-900 dark:hover:bg-zinc-900/55"
+                                : "bg-white text-zinc-700 shadow-sm ring-1 ring-zinc-200/80 hover:bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-100 dark:ring-zinc-600 dark:hover:bg-zinc-900"
+                          }`}
+                          title="Like"
+                          aria-label="Like"
+                          onClick={() => {
+                            toggleLike(ownerKey, "message", m.id);
+                            setReactionTick((x) => x + 1);
+                          }}
+                        >
+                          ♥{rx.likeCount ? ` ${rx.likeCount}` : ""}
+                        </button>
+                        {MESSAGE_QUICK_EMOJIS.map((em) => (
+                          <button
+                            key={em}
+                            type="button"
+                            className={
+                              isYou
+                                ? "rounded-full bg-white/10 px-2 py-1 text-sm leading-none text-white transition hover:bg-white/18 dark:bg-zinc-900/35 dark:text-zinc-900 dark:hover:bg-zinc-900/50"
+                                : "rounded-full bg-white px-2 py-1 text-sm leading-none text-zinc-800 shadow-sm ring-1 ring-zinc-200/80 transition hover:bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-100 dark:ring-zinc-600 dark:hover:bg-zinc-900"
+                            }
+                            title={`React ${em}`}
+                            aria-label={`React ${em}`}
+                            onClick={() => {
+                              addComment(ownerKey, "message", m.id, em);
+                              setReactionTick((x) => x + 1);
+                            }}
+                          >
+                            {em}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          className={
+                            isYou
+                              ? "ml-auto rounded-full border border-white/25 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-white/15 dark:border-zinc-700 dark:bg-zinc-900/45 dark:text-zinc-900 dark:hover:bg-zinc-900/60"
+                              : "ml-auto rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                          }
+                          onClick={() => {
+                            setComposer(`Reply to ${authorLabel}: ${snippet.slice(0, 140)}\n\n`);
+                          }}
+                        >
+                          Reply
+                        </button>
+                      </div>
+                      {rx.comments.length ? (
+                        <div
+                          className={`border-t px-2 py-1.5 ${
+                            isYou
+                              ? "border-zinc-600/80 bg-zinc-950/35 dark:border-zinc-500/40 dark:bg-zinc-200/40"
+                              : "border-zinc-100 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50"
+                          }`}
+                        >
+                          <p
+                            className={`mb-1 text-[10px] font-semibold uppercase tracking-wide ${
+                              isYou ? "text-zinc-300 dark:text-zinc-700" : "text-zinc-500 dark:text-zinc-400"
+                            }`}
+                          >
+                            Reactions
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {rx.comments.slice(-8).map((c) => (
+                              <span
+                                key={c.id}
+                                className={
+                                  isYou
+                                    ? "inline-flex items-center gap-1 rounded-full bg-white/12 px-2 py-0.5 text-xs text-white dark:bg-zinc-900/50 dark:text-zinc-900"
+                                    : "inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs text-zinc-800 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-950 dark:text-zinc-100 dark:ring-zinc-600"
+                                }
+                              >
+                                <span>{c.text}</span>
+                                <button
+                                  type="button"
+                                  className={
+                                    isYou
+                                      ? "rounded-full px-1 text-[10px] font-semibold text-zinc-300 hover:text-white dark:text-zinc-600 dark:hover:text-zinc-900"
+                                      : "rounded-full px-1 text-[10px] font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                                  }
+                                  title="Remove"
+                                  onClick={() => {
+                                    deleteComment(ownerKey, "message", m.id, c.id);
+                                    setReactionTick((x) => x + 1);
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })
             ) : (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">No messages yet. Say hi.</p>
             )
@@ -474,14 +667,14 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
         </div>
         <div className="mt-auto border-t border-zinc-200 p-4 dark:border-zinc-800">
           <input
-            ref={imageInputRef}
+            ref={galleryInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0] ?? null;
               e.target.value = "";
-              void onPickImage(f, "you");
+              void onPickGallery(f, "you");
             }}
           />
           <div className="relative flex flex-wrap items-center gap-2">
@@ -510,10 +703,10 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
             <button
               type="button"
               disabled={messagingDisabled}
-              onClick={() => imageInputRef.current?.click()}
+              onClick={() => galleryInputRef.current?.click()}
               className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-              aria-label="Attach image"
-              title="Image"
+              aria-label="Gallery — photo or video"
+              title="Gallery (photo or video)"
             >
               🖼
             </button>
@@ -602,20 +795,26 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
               onPick={(em) => setComposer((t) => `${t}${em}`)}
             />
           ) : null}
+          <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">Gallery</span> — pick a photo or video
+            (common extensions work even if the file type is blank). Reactions sit on the same card as the message so
+            they don’t float below. Use <span className="font-medium">♥</span> for like, tap an emoji to react, then{" "}
+            <span className="font-medium">Reply</span> to quote into the composer.
+          </p>
           {messagingBlocked ? (
             <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">You can’t message this user (you’re blocked).</p>
           ) : null}
           {showSimulatePeerReply && active && !messagingBlocked ? (
             <div className="mt-3 border-t border-dashed border-zinc-200 pt-3 dark:border-zinc-700">
               <input
-                ref={peerImageInputRef}
+                ref={peerGalleryInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0] ?? null;
                   e.target.value = "";
-                  void onPickImage(f, "them");
+                  void onPickGallery(f, "them");
                 }}
               />
               <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
@@ -644,10 +843,10 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
                 />
                 <button
                   type="button"
-                  onClick={() => peerImageInputRef.current?.click()}
+                  onClick={() => peerGalleryInputRef.current?.click()}
                   className="rounded-full border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                  aria-label="Attach image as them"
-                  title="Image"
+                  aria-label="Gallery as them — photo or video"
+                  title="Gallery (photo or video)"
                 >
                   🖼
                 </button>

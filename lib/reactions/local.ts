@@ -1,4 +1,4 @@
-export type ReactionItemType = "post" | "reel";
+export type ReactionItemType = "post" | "reel" | "message";
 
 export type LocalComment = {
   id: string;
@@ -42,6 +42,14 @@ function readStore(viewerKey: string): Store {
 function writeStore(viewerKey: string, store: Store) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(storageKey(viewerKey), JSON.stringify(store));
+  window.dispatchEvent(new CustomEvent("orbit:reactions-updated", { detail: { viewerKey } }));
+}
+
+/** Remove likes/comments for one item (e.g. when a message is deleted). */
+export function clearReactions(viewerKey: string, type: ReactionItemType, id: string) {
+  const store = readStore(viewerKey);
+  delete store[itemKey(type, id)];
+  writeStore(viewerKey, store);
 }
 
 export function readReactions(viewerKey: string, type: ReactionItemType, id: string): LocalReactions {

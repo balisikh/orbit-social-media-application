@@ -1,5 +1,6 @@
 export type MessageAttachment =
   | { kind: "image"; url: string }
+  | { kind: "video"; url: string }
   | { kind: "audio"; url: string }
   | { kind: "sticker"; emoji: string };
 
@@ -38,6 +39,7 @@ function normalizeAttachment(raw: unknown): MessageAttachment | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as { kind?: unknown; url?: unknown; emoji?: unknown };
   if (o.kind === "image" && typeof o.url === "string" && o.url) return { kind: "image", url: o.url };
+  if (o.kind === "video" && typeof o.url === "string" && o.url) return { kind: "video", url: o.url };
   if (o.kind === "audio" && typeof o.url === "string" && o.url) return { kind: "audio", url: o.url };
   if (o.kind === "sticker" && typeof o.emoji === "string" && o.emoji) return { kind: "sticker", emoji: o.emoji };
   return null;
@@ -146,6 +148,7 @@ export function getThreadPreview(thread: LocalThread): string {
   if (atts?.length) {
     const a = atts[atts.length - 1]!;
     if (a.kind === "image") return last.text.trim() ? `${last.text.trim()} · Photo` : "Photo";
+    if (a.kind === "video") return last.text.trim() ? `${last.text.trim()} · Video` : "Video";
     if (a.kind === "audio") return last.text.trim() ? `${last.text.trim()} · Voice` : "Voice message";
     if (a.kind === "sticker") return last.text.trim() || `Sticker ${a.emoji}`;
   }
@@ -192,7 +195,7 @@ export function deleteThread(ownerKey: string, threadId: string) {
   const removed = threads.find((t) => t.id === threadId);
   removed?.messages.forEach((m) => {
     m.attachments?.forEach((a) => {
-      if ((a.kind === "image" || a.kind === "audio") && a.url.startsWith("blob:")) {
+      if ((a.kind === "image" || a.kind === "video" || a.kind === "audio") && a.url.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(a.url);
         } catch {
@@ -250,7 +253,7 @@ export function deleteMessage(ownerKey: string, threadId: string, messageId: str
   const th = threads.find((t) => t.id === threadId);
   const msg = th?.messages.find((m) => m.id === messageId);
   msg?.attachments?.forEach((a) => {
-    if ((a.kind === "image" || a.kind === "audio") && a.url.startsWith("blob:")) {
+    if ((a.kind === "image" || a.kind === "video" || a.kind === "audio") && a.url.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(a.url);
       } catch {
