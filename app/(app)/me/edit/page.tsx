@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RequireFollowApprovalField } from "@/components/me/require-follow-approval-field";
 import { SetProfileBasicsForm } from "@/components/me/set-profile-basics-form";
 import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
 import { parseUsername, usernameFromUserMetadata } from "@/lib/auth/username";
@@ -17,6 +18,7 @@ export default async function EditProfilePage() {
   let displayName: string | null = null;
   let bio: string | null = null;
   let dbHandle: string | null = null;
+  let requireFollowApproval = false;
 
   if (configured) {
     try {
@@ -33,6 +35,7 @@ export default async function EditProfilePage() {
         dbHandle = profile?.handle ?? null;
         displayName = profile?.display_name ?? null;
         bio = profile?.bio ?? null;
+        requireFollowApproval = profile?.require_follow_approval ?? false;
       }
     } catch {
       email = null;
@@ -92,6 +95,8 @@ export default async function EditProfilePage() {
         currentDisplayName={displayName}
         currentBio={bio}
       />
+
+      {source === "supabase" ? <RequireFollowApprovalField initialRequireApproval={requireFollowApproval} /> : null}
     </div>
   );
 }

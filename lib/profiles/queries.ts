@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ProfileRow } from "@/lib/profiles/types";
 
-const profileSelect = "id, handle, display_name, bio, avatar_url, created_at, updated_at";
+const profileSelect =
+  "id, handle, display_name, bio, avatar_url, require_follow_approval, created_at, updated_at";
 
 export async function getProfileByHandle(
   supabase: SupabaseClient,

@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 import { LocalFollowStats } from "@/components/profile/local-follow-stats";
 import { ProfileFollowTabs } from "@/components/profile/profile-follow-tabs";
+import { SupabaseIncomingFollowRequests } from "@/components/profile/supabase-incoming-follow-requests";
 
 function avatarInitial(email: string, handle: string | null): string {
   if (handle?.length) return handle[0]!.toUpperCase();
@@ -124,6 +125,7 @@ export default async function MePage() {
           {!configured ? (
             <LocalFollowStats viewerKey={email!} handle={handle} followersHref="#followers" followingHref="#following" />
           ) : null}
+          {configured && source === "supabase" ? <SupabaseIncomingFollowRequests /> : null}
           {!configured ? <ProfileFollowTabs viewerKey={email!} handle={handle ?? null} /> : null}
 
           {configured ? (

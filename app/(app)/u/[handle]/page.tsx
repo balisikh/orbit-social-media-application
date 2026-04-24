@@ -6,7 +6,7 @@ import { ProfilePostGrid } from "@/components/profile/profile-post-grid";
 import { LocalFollowButton } from "@/components/profile/local-follow-button";
 import { LocalFollowStats } from "@/components/profile/local-follow-stats";
 import { SupabaseFollowButton } from "@/components/profile/supabase-follow-button";
-import { countFollowers, countFollowing, isFollowing } from "@/lib/follows/queries";
+import { countFollowers, countFollowing, hasPendingOutgoingFollowRequest, isFollowing } from "@/lib/follows/queries";
 import { getPostsByUserId } from "@/lib/posts/queries";
 import { getProfileByHandle } from "@/lib/profiles/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -100,6 +100,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
   const followers = await countFollowers(supabase, profile.id);
   const following = await countFollowing(supabase, profile.id);
   const viewerFollows = user?.id ? await isFollowing(supabase, user.id, profile.id) : false;
+  const viewerRequested =
+    user?.id && !viewerFollows ? await hasPendingOutgoingFollowRequest(supabase, user.id, profile.id) : false;
 
   return (
     <div className="space-y-8">
@@ -128,7 +130,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
             </>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {user?.id ? <SupabaseFollowButton followedId={profile.id} initialFollowing={viewerFollows} /> : null}
+              {user?.id ? (
+                <SupabaseFollowButton
+                  followedId={profile.id}
+                  initialFollowing={viewerFollows}
+                  initialRequested={viewerRequested}
+                />
+              ) : null}
               {profileDefaultActions({ viewerIsOwner: false, publicHref: null, showFollowMessage: false })}
             </div>
           )

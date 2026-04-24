@@ -251,13 +251,14 @@ export function removeFollowerLocal(targetHandle: string, followerKey: string) {
 }
 
 export function blockFollowerLocal(targetHandle: string, followerKey: string) {
-  const store = readStore();
   const h = normalizeHandle(targetHandle);
+  // Remove follow + pending requests first (persists). Must run before mutating `blocked` on a stale
+  // in-memory store — otherwise a final writeStore(stale) would undo the unfollow.
+  removeFollowerLocal(targetHandle, followerKey);
+  const store = readStore();
   const blocked = Array.isArray(store.blockedByHandle[h]) ? [...store.blockedByHandle[h]!] : [];
   if (!blocked.includes(followerKey)) blocked.unshift(followerKey);
   store.blockedByHandle[h] = Array.from(new Set(blocked));
-  // remove follow + request
-  removeFollowerLocal(h, followerKey);
   logAction({ type: "blocked", handle: h, viewerKey: followerKey });
   writeStore(store);
 }
