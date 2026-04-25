@@ -7,7 +7,6 @@ import { HeaderAuthActions } from "@/components/header-auth-actions";
 
 const nav = [
   { href: "/feed", label: "Feed" },
-  { href: "/explore", label: "Explore" },
   { href: "/reels", label: "Reels" },
   { href: "/messages", label: "Messages" },
   { href: "/me", label: "Profile" },
