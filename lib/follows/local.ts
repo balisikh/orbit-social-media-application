@@ -41,13 +41,54 @@ function readStoreV1(): LocalFollowV1 {
   }
 }
 
+function isFollowRequestRecord(x: unknown): x is FollowRequest {
+  if (!x || typeof x !== "object") return false;
+  const r = x as Record<string, unknown>;
+  return (
+    typeof r.id === "string" &&
+    typeof r.fromViewerKey === "string" &&
+    typeof r.toHandle === "string" &&
+    typeof r.createdAt === "string"
+  );
+}
+
+/** Recover a valid store from partial/corrupt JSON (avoids runtime throws in demo + follow helpers). */
+function coerceLocalFollowV2(data: unknown): LocalFollowV2 {
+  const base: LocalFollowV2 = { followingByViewer: {}, requestsByHandle: {}, blockedByHandle: {} };
+  if (!data || typeof data !== "object" || Array.isArray(data)) return base;
+  const o = data as Record<string, unknown>;
+
+  const fv = o.followingByViewer;
+  if (fv && typeof fv === "object" && !Array.isArray(fv)) {
+    for (const [k, v] of Object.entries(fv)) {
+      if (Array.isArray(v)) base.followingByViewer[k] = v.filter((x): x is string => typeof x === "string");
+    }
+  }
+
+  const rq = o.requestsByHandle;
+  if (rq && typeof rq === "object" && !Array.isArray(rq)) {
+    for (const [k, v] of Object.entries(rq)) {
+      if (Array.isArray(v)) base.requestsByHandle[k] = v.filter(isFollowRequestRecord);
+    }
+  }
+
+  const bl = o.blockedByHandle;
+  if (bl && typeof bl === "object" && !Array.isArray(bl)) {
+    for (const [k, v] of Object.entries(bl)) {
+      if (Array.isArray(v)) base.blockedByHandle[k] = v.filter((x): x is string => typeof x === "string");
+    }
+  }
+
+  return base;
+}
+
 function readStore(): LocalFollowV2 {
   if (typeof window === "undefined") return { followingByViewer: {}, requestsByHandle: {}, blockedByHandle: {} };
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const data = JSON.parse(raw) as unknown;
-      if (data && typeof data === "object") return data as LocalFollowV2;
+      if (data && typeof data === "object") return coerceLocalFollowV2(data);
     }
   } catch {
     // ignore
@@ -263,38 +304,148 @@ export function blockFollowerLocal(targetHandle: string, followerKey: string) {
   writeStore(store);
 }
 
+export function addDemoFollowerRequestsLocal(opts: {
+  handle: string;
+  requestsToAdd: number;
+}): { ok: true; addedRequests: number } | { ok: false; error: string } {
+  try {
+    const store = readStore();
+    if (!store.followingByViewer || typeof store.followingByViewer !== "object") store.followingByViewer = {};
+    if (!store.requestsByHandle || typeof store.requestsByHandle !== "object") store.requestsByHandle = {};
+    if (!store.blockedByHandle || typeof store.blockedByHandle !== "object") store.blockedByHandle = {};
+
+    const h = normalizeHandle(opts.handle);
+    if (!h) return { ok: false, error: "Missing handle." };
+
+    const n = Math.floor(Number(opts.requestsToAdd));
+    const requestsN = Number.isFinite(n) ? Math.max(0, Math.min(1000, n)) : 0;
+
+    const existing = store.requestsByHandle[h] ?? [];
+    const existingFrom = new Set(existing.map((r) => r.fromViewerKey));
+
+    const demoPrefix = `demo_${h}_`;
+    const demoSuffix = "@local";
+    const escapedSuffix = demoSuffix.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+    const demoIndexRe = new RegExp(`^${demoPrefix}(\\d{3,})${escapedSuffix}$`);
+    let maxDemoIdx = 0;
+    for (const key of Object.keys(store.followingByViewer)) {
+      const m = key.match(demoIndexRe);
+      if (!m) continue;
+      const idx = Number(m[1]);
+      if (Number.isFinite(idx) && idx > maxDemoIdx) maxDemoIdx = idx;
+    }
+    for (const key of existingFrom) {
+      const m = key.match(demoIndexRe);
+      if (!m) continue;
+      const idx = Number(m[1]);
+      if (Number.isFinite(idx) && idx > maxDemoIdx) maxDemoIdx = idx;
+    }
+
+    const next = [...existing];
+    let addedRequests = 0;
+    let cursor = maxDemoIdx + 1;
+    while (addedRequests < requestsN && cursor <= maxDemoIdx + requestsN + 100) {
+      const fk = `${demoPrefix}${String(cursor).padStart(3, "0")}${demoSuffix}`;
+      cursor += 1;
+      if (existingFrom.has(fk)) continue;
+      const followingList = store.followingByViewer[fk] ?? [];
+      if (Array.isArray(followingList) && followingList.includes(h)) continue;
+
+      next.unshift({
+        id: crypto.randomUUID(),
+        fromViewerKey: fk,
+        toHandle: h,
+        createdAt: nowIso(),
+      });
+      existingFrom.add(fk);
+      logAction({ type: "requested", handle: h, viewerKey: fk });
+      addedRequests += 1;
+    }
+
+    store.requestsByHandle[h] = next;
+    writeStore(store);
+    return { ok: true, addedRequests };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: message };
+  }
+}
+
 export function addDemoFollowersAndFollowingLocal(opts: {
   viewerKey: string;
   handle: string;
   followersToAdd: number;
   followingToAdd: number;
-}) {
-  const store = readStore();
-  const targetHandle = normalizeHandle(opts.handle);
+}):
+  | { ok: true; addedFollowers: number; addedFollowing: number }
+  | { ok: false; error: string } {
+  try {
+    const store = readStore();
+    if (!store.followingByViewer || typeof store.followingByViewer !== "object") store.followingByViewer = {};
+    if (!store.requestsByHandle || typeof store.requestsByHandle !== "object") store.requestsByHandle = {};
+    if (!store.blockedByHandle || typeof store.blockedByHandle !== "object") store.blockedByHandle = {};
 
-  // Add followers: create fake viewerKeys that follow targetHandle
-  const followersN = Math.max(0, Math.min(1000, Math.floor(opts.followersToAdd)));
-  for (let i = 0; i < followersN; i++) {
-    const fk = `demo_${targetHandle}_${String(i + 1).padStart(3, "0")}@local`;
-    const list = Array.isArray(store.followingByViewer[fk]) ? [...store.followingByViewer[fk]!] : [];
-    if (!list.includes(targetHandle)) list.unshift(targetHandle);
-    store.followingByViewer[fk] = Array.from(new Set(list));
-  }
+    const targetHandle = normalizeHandle(opts.handle);
+    if (!opts.viewerKey.trim()) {
+      return { ok: false, error: "Missing viewer key." };
+    }
 
-  // Add following: make current viewerKey follow fake handles
-  const followingN = Math.max(0, Math.min(1000, Math.floor(opts.followingToAdd)));
-  const base = slugify(targetHandle) || "user";
-  const curList = Array.isArray(store.followingByViewer[opts.viewerKey])
-    ? [...store.followingByViewer[opts.viewerKey]!]
-    : [];
-  for (let i = 0; i < followingN; i++) {
-    curList.unshift(`${base}_follow_${String(i + 1).padStart(3, "0")}`);
-  }
-  store.followingByViewer[opts.viewerKey] = Array.from(new Set(curList.map(normalizeHandle)));
+    const safeCount = (raw: unknown, cap: number) => {
+      const n = Math.floor(Number(raw));
+      if (!Number.isFinite(n) || n < 0) return 0;
+      return Math.min(cap, n);
+    };
 
-  writeStore(store);
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("orbit:follows-updated"));
+    const demoPrefix = `demo_${targetHandle}_`;
+    const demoSuffix = "@local";
+    const demoIndexRe = new RegExp(`^${demoPrefix}(\\d{3,})${demoSuffix.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}$`);
+    let maxDemoIdx = 0;
+    for (const k of Object.keys(store.followingByViewer)) {
+      const m = k.match(demoIndexRe);
+      if (!m) continue;
+      const n = Number(m[1]);
+      if (Number.isFinite(n) && n > maxDemoIdx) maxDemoIdx = n;
+    }
+
+    // Add followers: create fake viewerKeys that follow targetHandle
+    const followersN = safeCount(opts.followersToAdd, 1000);
+    let addedFollowers = 0;
+    for (let i = 0; i < followersN; i++) {
+      const idx = maxDemoIdx + i + 1;
+      const fk = `${demoPrefix}${String(idx).padStart(3, "0")}${demoSuffix}`;
+      const list = Array.isArray(store.followingByViewer[fk]) ? [...store.followingByViewer[fk]!] : [];
+      if (!list.includes(targetHandle)) list.unshift(targetHandle);
+      store.followingByViewer[fk] = Array.from(new Set(list));
+      addedFollowers += 1;
+    }
+
+    // Add following: make current viewerKey follow fake handles
+    const followingN = safeCount(opts.followingToAdd, 1000);
+    const base = slugify(targetHandle) || "user";
+    const curList = Array.isArray(store.followingByViewer[opts.viewerKey])
+      ? [...store.followingByViewer[opts.viewerKey]!]
+      : [];
+    const existing = new Set(curList.map(normalizeHandle));
+    let addedFollowing = 0;
+    let cursor = 1;
+    while (addedFollowing < followingN && cursor <= 5000) {
+      const h = normalizeHandle(`${base}_follow_${String(cursor).padStart(3, "0")}`);
+      cursor += 1;
+      if (existing.has(h)) continue;
+      existing.add(h);
+      curList.unshift(h);
+      addedFollowing += 1;
+    }
+    store.followingByViewer[opts.viewerKey] = Array.from(new Set(curList.map(normalizeHandle)));
+
+    writeStore(store);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("orbit:follows-updated"));
+    }
+    return { ok: true, addedFollowers, addedFollowing };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: message };
   }
 }
 

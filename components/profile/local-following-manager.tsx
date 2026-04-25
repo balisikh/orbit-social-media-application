@@ -123,8 +123,28 @@ export function LocalFollowingManager({ viewerKey }: Props) {
   );
 }
 
-export function LocalFollowingDemoTools({ viewerKey }: Props) {
+type DemoToolsProps = {
+  viewerKey: string;
+  /** Used to prefix fake `@handle_follow_001` rows; falls back to email local-part. */
+  profileHandle?: string | null;
+};
+
+function parseDemoCount(raw: number): number {
+  if (!Number.isFinite(raw) || raw < 1) return 1;
+  return Math.min(1000, Math.floor(raw));
+}
+
+function handleForDemoFollowing(profileHandle: string | null | undefined, viewerKey: string): string {
+  const h = profileHandle?.trim();
+  if (h) return h;
+  const local = viewerKey.split("@")[0]?.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+  return local && local.length >= 1 ? local.slice(0, 30) : "user";
+}
+
+export function LocalFollowingDemoTools({ viewerKey, profileHandle }: DemoToolsProps) {
   const [demoFollowing, setDemoFollowing] = useState(1);
+  const [demoError, setDemoError] = useState<string | null>(null);
+  const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
   return (
     <div className="max-w-xl rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
       <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Bulk-add following</p>
@@ -135,24 +155,41 @@ export function LocalFollowingDemoTools({ viewerKey }: Props) {
           min={1}
           max={1000}
           value={demoFollowing}
-          onChange={(e) => setDemoFollowing(Number(e.target.value))}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setDemoFollowing(Number.isFinite(v) ? v : 1);
+          }}
           className="w-28 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
         />
         <button
           type="button"
           onClick={() => {
-            addDemoFollowersAndFollowingLocal({
+            setDemoError(null);
+            setDemoSuccess(null);
+            const res = addDemoFollowersAndFollowingLocal({
               viewerKey,
-              handle: "me",
+              handle: handleForDemoFollowing(profileHandle, viewerKey),
               followersToAdd: 0,
-              followingToAdd: demoFollowing,
+              followingToAdd: parseDemoCount(demoFollowing),
             });
+            if (!res.ok) {
+              setDemoError(res.error);
+              return;
+            }
+            setDemoSuccess(`Added ${res.addedFollowing} account${res.addedFollowing === 1 ? "" : "s"}.`);
+            window.dispatchEvent(new CustomEvent("orbit:follows-updated"));
           }}
           className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           Add following
         </button>
       </div>
+      {demoSuccess ? <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">{demoSuccess}</p> : null}
+      {demoError ? (
+        <p className="mt-2 text-xs text-red-600 dark:text-red-400" role="alert">
+          {demoError}
+        </p>
+      ) : null}
     </div>
   );
 }

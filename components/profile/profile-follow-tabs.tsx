@@ -121,7 +121,7 @@ export function ProfileFollowTabs({ viewerKey, handle }: Props) {
               Set a username in Edit profile to use follower demo tools here.
             </p>
           )}
-          <LocalFollowingDemoTools viewerKey={viewerKey} />
+          <LocalFollowingDemoTools viewerKey={viewerKey} profileHandle={handle} />
         </div>
       </div>
     </div>
