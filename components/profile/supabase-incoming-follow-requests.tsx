@@ -67,14 +67,20 @@ export function SupabaseIncomingFollowRequests() {
 
   if (loading) {
     return (
-      <div className="max-w-xl rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
+      <div
+        id="follow-requests"
+        className="max-w-xl rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400"
+      >
         Loading follow requests…
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl space-y-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+    <div
+      id="follow-requests"
+      className="max-w-xl space-y-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40"
+    >
       <div>
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Follow requests</p>
         <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400">

@@ -102,12 +102,18 @@ export function LocalFollowingManager({ viewerKey }: Props) {
           <div className="mt-2 rounded-xl bg-white px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400">
             <p className="font-medium text-zinc-900 dark:text-zinc-50">You’re not following anyone yet</p>
             <p className="mt-1">Open a public profile and tap Follow to start building your feed.</p>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link
                 href="/feed"
                 className="inline-flex rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 Browse Feed
+              </Link>
+              <Link
+                href="/explore"
+                className="inline-flex rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              >
+                Explore users
               </Link>
             </div>
           </div>

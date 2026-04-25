@@ -8,7 +8,7 @@ import { ProfileHeader, profileDefaultActions } from "@/components/profile/profi
 import { SupabasePostGrid } from "@/components/profile/supabase-post-grid";
 import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
 import { parseUsername, usernameFromUserMetadata } from "@/lib/auth/username";
-import { countFollowers, countFollowing } from "@/lib/follows/queries";
+import { countFollowers, countFollowing, countPendingIncomingFollowRequests } from "@/lib/follows/queries";
 import { getPostsByUserId } from "@/lib/posts/queries";
 import { ensureProfileForUser } from "@/lib/profiles/ensure-profile";
 import { getProfileByUserId } from "@/lib/profiles/queries";
@@ -39,6 +39,7 @@ export default async function MePage() {
   let postPreviews: Array<{ id: string; imageUrl: string | null }> | null = null;
   let followers = 0;
   let following = 0;
+  let pendingRequests = 0;
 
   if (configured) {
     try {
@@ -61,6 +62,7 @@ export default async function MePage() {
         postPreviews = posts.map((p) => ({ id: p.id, imageUrl: p.image_url ?? null }));
         followers = await countFollowers(supabase, user.id);
         following = await countFollowing(supabase, user.id);
+        pendingRequests = await countPendingIncomingFollowRequests(supabase, user.id);
       }
     } catch {
       email = null;
@@ -118,6 +120,20 @@ export default async function MePage() {
               <div className="flex flex-wrap gap-2">
                 <NewPostButton />
                 {publicHref ? <CopyProfileLinkButton href={publicHref} /> : null}
+                {configured && source === "supabase" ? (
+                  <Link
+                    href="/me#follow-requests"
+                    className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                    title="View follow requests"
+                  >
+                    Requests
+                    {pendingRequests > 0 ? (
+                      <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
+                        {pendingRequests}
+                      </span>
+                    ) : null}
+                  </Link>
+                ) : null}
                 {profileDefaultActions({ viewerIsOwner: true, publicHref })}
               </div>
             }
