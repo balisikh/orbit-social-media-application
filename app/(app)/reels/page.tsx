@@ -3,11 +3,13 @@ import { ReelsTabs } from "@/components/reels/reels-tabs";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 import { createClient } from "@/lib/supabase/server";
 import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
+import { listFollowingReels, listRecentReels } from "@/lib/reels/queries";
 
 export default async function ReelsPage() {
   const configured = getSupabasePublicConfig().ready;
   const devSession = await readDevSessionFromCookies();
-  let reelItems: Array<{ id: string; videoUrl: string; caption: string | null }> = [];
+  let forYouReels: Array<{ id: string; videoUrl: string; caption: string | null }> = [];
+  let followingReels: Array<{ id: string; videoUrl: string; caption: string | null }> = [];
   let viewerIsOwner = false;
 
   if (configured) {
@@ -18,22 +20,12 @@ export default async function ReelsPage() {
       } = await supabase.auth.getUser();
       if (user?.id) {
         viewerIsOwner = true;
-        const { data } = await supabase
-          .from("reels")
-          .select("id, caption, video_url, created_at")
-          .order("created_at", { ascending: false })
-          .limit(30);
-        reelItems =
-          (data ?? []).map((r) => ({
-            id: r.id as string,
-            caption: (r.caption as string | null) ?? null,
-            videoUrl: (r.video_url as string | null) ?? "",
-          })) ?? [];
-        // filter invalid
-        reelItems = reelItems.filter((r) => typeof r.videoUrl === "string" && r.videoUrl.length > 0);
+        forYouReels = await listRecentReels(supabase, { limit: 30 });
+        followingReels = await listFollowingReels(supabase, user.id, { limit: 30 });
       }
     } catch {
-      reelItems = [];
+      forYouReels = [];
+      followingReels = [];
       viewerIsOwner = false;
     }
   }
@@ -63,7 +55,7 @@ export default async function ReelsPage() {
         </div>
       </div>
       {configured ? (
-        <ReelsTabs mode="supabase" reels={reelItems} isOwner={viewerIsOwner} />
+        <ReelsTabs mode="supabase" forYouReels={forYouReels} followingReels={followingReels} isOwner={viewerIsOwner} />
       ) : (
         <ReelsTabs mode="local" ownerKey={devSession?.email ?? "local"} />
       )}
