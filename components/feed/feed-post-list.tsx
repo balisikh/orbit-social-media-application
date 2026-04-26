@@ -254,7 +254,7 @@ export function FeedPostList(props: Props) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/30">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/30">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Your feed is empty</p>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Create a post to see it here.
@@ -270,7 +270,7 @@ export function FeedPostList(props: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-4 lg:max-w-3xl">
       {items.map((p) => (
         (() => {
           void version; // rerender when reactions change

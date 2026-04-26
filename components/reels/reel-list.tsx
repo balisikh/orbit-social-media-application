@@ -227,12 +227,12 @@ export function ReelList(props: Props) {
       <div className="mx-auto max-w-sm overflow-hidden rounded-2xl bg-zinc-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10">
         <div
           ref={scrollerRef}
-          className="h-[min(85vh,52rem)] snap-y snap-mandatory overflow-y-auto overscroll-contain"
+          className="h-[calc(100dvh-3.5rem-2rem)] snap-y snap-mandatory overflow-y-auto overscroll-contain sm:h-[min(85vh,52rem)]"
         >
           {items.map((r) => (
             <section
               key={r.id}
-              className="relative h-[min(85vh,52rem)] snap-start overflow-hidden"
+              className="relative h-[calc(100dvh-3.5rem-2rem)] snap-start overflow-hidden sm:h-[min(85vh,52rem)]"
               aria-label="Reel"
               data-reel-id={r.id}
               ref={(el) => {

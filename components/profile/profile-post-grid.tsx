@@ -41,7 +41,7 @@ export function ProfilePostGrid({
   return (
     <div>
       <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Posts</h2>
-      <div className="mt-2 grid grid-cols-3 gap-1 sm:gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4">
         {(posts ?? []).slice(0, 30).map((post) => {
           const feedHref = linkPostsToFeed ? `/feed#post-${post.id}` : null;
           const tile = (

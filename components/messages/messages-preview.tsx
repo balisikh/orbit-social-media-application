@@ -413,7 +413,7 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
   const messagingDisabled = messagingBlocked;
 
   return (
-    <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:grid-cols-[minmax(0,240px)_1fr] sm:p-0">
+    <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:grid-cols-[minmax(0,240px)_1fr] sm:p-0 sm:min-h-[calc(100dvh-3.5rem-3rem)]">
       <aside className="sm:border-r sm:border-zinc-200 sm:dark:border-zinc-800">
         <div className="p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Inbox</p>
@@ -427,7 +427,7 @@ export function MessagesPreview({ ownerKey, showSimulatePeerReply = false }: Pro
             />
           </div>
 
-          <div ref={listRef} className="mt-3 max-h-[55vh] overflow-y-auto pr-1">
+          <div ref={listRef} className="mt-3 max-h-[55vh] overflow-y-auto pr-1 sm:max-h-none sm:h-[calc(100dvh-3.5rem-12rem)]">
             <ul className="space-y-1" role="list">
               {filtered.map((t) => {
                 const on = t.id === activeId;
