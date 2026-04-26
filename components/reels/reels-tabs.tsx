@@ -1,7 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { ReelList } from "@/components/reels/reel-list";
+
+const LocalReelListClient = dynamic(() => import("@/components/reels/local-reel-list-client"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/30">
+      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Loading reels…</p>
+      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Reading saved reels from this browser.</p>
+    </div>
+  ),
+});
 
 type ReelItem = { id: string; videoUrl: string; caption: string | null };
 
@@ -56,7 +67,7 @@ export function ReelsTabs(props: Props) {
           <ReelList mode="supabase" reels={props.forYouReels} isOwner={props.isOwner} />
         )
       ) : (
-        <ReelList mode="local" ownerKey={props.ownerKey} isOwner />
+        <LocalReelListClient ownerKey={props.ownerKey} />
       )}
     </div>
   );
