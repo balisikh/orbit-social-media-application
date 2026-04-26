@@ -54,7 +54,9 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
     const isDev = process.env.NODE_ENV === "development";
 
     if (!ready && !isDev) {
-      setError("Sign-in is not available on this server.");
+      setError(
+        "Sign-in needs Supabase on this server. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel (Production), then redeploy.",
+      );
       return;
     }
 
