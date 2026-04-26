@@ -44,9 +44,13 @@ export function ProfilePostGrid({
       <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4">
         {(posts ?? []).slice(0, 30).map((post) => {
           const feedHref = linkPostsToFeed ? `/feed#post-${post.id}` : null;
+          const isVideo = post.media?.[0]?.kind === "video" || Boolean(post.videoUrl);
+          const isSlideshow = (post.media?.length ?? 0) > 1;
+          const isSingleImage = !isVideo && !isSlideshow && Boolean(post.media?.[0]?.kind === "image" || post.imageUrl);
+          const tileFrameClass = isSingleImage ? "aspect-[4/5] sm:aspect-square" : "aspect-square";
           const tile = (
             <>
-              {post.media?.[0]?.kind === "video" || post.videoUrl ? (
+              {isVideo ? (
                 <div className="relative h-full w-full">
                   <video
                     src={post.media?.[0]?.url ?? post.videoUrl ?? ""}
@@ -80,7 +84,7 @@ export function ProfilePostGrid({
           return (
             <div
               key={post.id}
-              className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900"
+              className={`group relative ${tileFrameClass} overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900`}
             >
               {feedHref ? (
                 <Link

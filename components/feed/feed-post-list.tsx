@@ -56,6 +56,10 @@ function MediaCarousel({
   const n = media.length;
   const safeIdx = idx >= 0 && idx < n ? idx : 0;
   const item = media[safeIdx]!;
+  const isSlideshow = n > 1;
+  const frameClass = isSlideshow
+    ? "relative min-h-[min(72dvh,36rem)] max-h-[min(88dvh,52rem)] w-full overflow-hidden bg-black sm:aspect-[9/16] sm:min-h-0"
+    : "relative aspect-[4/5] max-h-[min(88dvh,52rem)] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900";
 
   function goPrev() {
     setIdx((cur) => (cur - 1 + n) % n);
@@ -67,7 +71,7 @@ function MediaCarousel({
   return (
     <div>
       <div
-        className="relative outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-100 dark:focus-visible:ring-offset-zinc-900"
+        className={`${frameClass} outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-100 dark:focus-visible:ring-offset-zinc-900`}
         tabIndex={n > 1 ? 0 : undefined}
         role={n > 1 ? "region" : undefined}
         aria-label={n > 1 ? `Post slideshow, slide ${safeIdx + 1} of ${n}. Use arrow keys when focused.` : undefined}
@@ -100,10 +104,16 @@ function MediaCarousel({
         }}
       >
         {item.kind === "video" ? (
-          <video src={item.url} className="h-auto w-full" controls playsInline preload="metadata" />
+          <video
+            src={item.url}
+            className={isSlideshow ? "h-full w-full object-contain sm:object-cover" : "h-auto w-full"}
+            controls
+            playsInline
+            preload="metadata"
+          />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element -- remote or data URLs
-          <img src={item.url} alt="" className="h-auto w-full object-cover" loading="lazy" />
+          <img src={item.url} alt="" className="h-full w-full object-cover" loading="lazy" />
         )}
         {item.kind === "video" ? (
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-3 pt-10 text-white">
@@ -311,15 +321,19 @@ export function FeedPostList(props: Props) {
                 </div>
               </div>
             ) : p.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- remote or data URLs
-              <img src={p.imageUrl} alt="" className="h-auto w-full object-cover" loading="lazy" />
+              <div className="relative aspect-[4/5] max-h-[min(88dvh,52rem)] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+                {/* eslint-disable-next-line @next/next/no-img-element -- remote or data URLs */}
+                <img src={p.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+              </div>
             ) : (
               <div className="aspect-[4/5]" aria-hidden />
             )}
           </div>
 
           {p.caption ? (
-            <p className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">{p.caption}</p>
+            <p className="mx-auto max-w-prose break-words px-4 py-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+              {p.caption}
+            </p>
           ) : null}
 
           <div className="border-t border-zinc-100 px-4 py-3 dark:border-zinc-800">
