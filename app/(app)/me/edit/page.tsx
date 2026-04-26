@@ -3,6 +3,7 @@ import { RequireFollowApprovalField } from "@/components/me/require-follow-appro
 import { SetProfileBasicsForm } from "@/components/me/set-profile-basics-form";
 import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
 import { parseUsername, usernameFromUserMetadata } from "@/lib/auth/username";
+import { bioFromAuthUser, displayNameFromAuthUser } from "@/lib/profiles/auth-appearance";
 import { ensureProfileForUser } from "@/lib/profiles/ensure-profile";
 import { getProfileByUserId } from "@/lib/profiles/queries";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
@@ -33,8 +34,8 @@ export default async function EditProfilePage() {
         await ensureProfileForUser(supabase, user);
         const profile = await getProfileByUserId(supabase, user.id);
         dbHandle = profile?.handle ?? null;
-        displayName = profile?.display_name ?? null;
-        bio = profile?.bio ?? null;
+        displayName = profile?.display_name?.trim() || displayNameFromAuthUser(user) || null;
+        bio = profile?.bio?.trim() || bioFromAuthUser(user) || null;
         requireFollowApproval = profile?.require_follow_approval ?? false;
       }
     } catch {

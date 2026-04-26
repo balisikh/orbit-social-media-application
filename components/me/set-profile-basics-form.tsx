@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { writeDevProfileLocalBackup } from "@/lib/auth/dev-profile-local";
 import { parseUsername } from "@/lib/auth/username";
 
 type Props = {
@@ -118,40 +119,55 @@ export function SetProfileBasicsForm({ mode, email, currentHandle, currentDispla
 
     setLoading(true);
     try {
+      const keyEmail = email.trim().toLowerCase();
       if (mode === "dev" && avatarFile) {
         const normalized = await normalizeAvatarFile(avatarFile);
         const raw = await fileToDataUrl(normalized);
         const small = await downscaleAvatar(raw);
-        const keyEmail = email.trim().toLowerCase();
         window.localStorage.setItem(`orbit:avatar:${keyEmail}`, small);
         window.dispatchEvent(new CustomEvent("orbit:avatar-updated", { detail: { ownerKey: keyEmail } }));
       }
 
       if (mode === "supabase") {
+        let avatarDataUrl: string | null = null;
+        if (avatarFile) {
+          const normalized = await normalizeAvatarFile(avatarFile);
+          const raw = await fileToDataUrl(normalized);
+          avatarDataUrl = await downscaleAvatar(raw);
+        }
+
         const supabase = createClient();
         const { error: updateError } = await supabase.auth.updateUser({
           data: {
             ...(nextHandle ? { username: nextHandle } : {}),
             ...(nextName ? { full_name: nextName } : {}),
+            bio: nextBio.length ? nextBio : "",
           },
         });
         if (updateError) {
           setError(updateError.message);
           return;
         }
-        if (nextBio.length || currentBio) {
+
+        const wantsBioUpdate = nextBio.length > 0 || Boolean(currentBio);
+        const wantsAvatarUpdate = Boolean(avatarDataUrl);
+        if (wantsBioUpdate || wantsAvatarUpdate) {
+          const payload: { bio?: string | null; avatarUrl?: string | null } = {};
+          if (wantsBioUpdate) payload.bio = nextBio.length ? nextBio : null;
+          if (wantsAvatarUpdate) payload.avatarUrl = avatarDataUrl;
           const update = await fetch("/api/profile/update", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ bio: nextBio.length ? nextBio : null }),
+            body: JSON.stringify(payload),
           });
           if (!update.ok) {
             const j = (await update.json().catch(() => null)) as { error?: string } | null;
-            setError(j?.error ?? "Saved, but Orbit couldn’t update your bio yet.");
+            setError(j?.error ?? "Saved, but Orbit couldn’t update your profile yet.");
             router.refresh();
             return;
           }
         }
+
         const sync = await fetch("/api/profile/sync", { method: "POST" });
         if (!sync.ok) {
           const j = (await sync.json().catch(() => null)) as { error?: string } | null;
@@ -175,6 +191,11 @@ export function SetProfileBasicsForm({ mode, email, currentHandle, currentDispla
           setError(j?.error ?? "Couldn’t update local preview profile.");
           return;
         }
+        writeDevProfileLocalBackup(keyEmail, {
+          username: nextHandle,
+          displayName: nextName.length ? nextName : null,
+          bio: nextBio.length ? nextBio : null,
+        });
       }
 
       setSuccess("Saved.");
@@ -202,22 +223,24 @@ export function SetProfileBasicsForm({ mode, email, currentHandle, currentDispla
         </p>
       </div>
 
-      {mode === "dev" ? (
-        <div>
-          <label htmlFor="me-avatar" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-            Profile photo
-          </label>
-          <input
-            id="me-avatar"
-            type="file"
-            accept="image/*"
-            disabled={loading}
-            onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:file:bg-zinc-900 dark:file:text-zinc-50 dark:hover:file:bg-zinc-800"
-          />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">Upload a photo to replace your initial.</p>
-        </div>
-      ) : null}
+      <div>
+        <label htmlFor="me-avatar" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+          Profile photo
+        </label>
+        <input
+          id="me-avatar"
+          type="file"
+          accept="image/*"
+          disabled={loading}
+          onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50 dark:file:bg-zinc-900 dark:file:text-zinc-50 dark:hover:file:bg-zinc-800"
+        />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
+          {mode === "supabase"
+            ? "Upload a photo to save it to your profile (shows on /me and your public profile after you sign in again)."
+            : "Upload a photo to replace your initial (saved in this browser)."}
+        </p>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="min-w-0">

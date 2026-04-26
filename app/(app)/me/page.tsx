@@ -10,6 +10,7 @@ import { readDevSessionFromCookies } from "@/lib/auth/dev-session";
 import { parseUsername, usernameFromUserMetadata } from "@/lib/auth/username";
 import { countFollowers, countFollowing, countPendingIncomingFollowRequests } from "@/lib/follows/queries";
 import { getPostsByUserId } from "@/lib/posts/queries";
+import { avatarUrlFromAuthUser, bioFromAuthUser, displayNameFromAuthUser } from "@/lib/profiles/auth-appearance";
 import { ensureProfileForUser } from "@/lib/profiles/ensure-profile";
 import { getProfileByUserId } from "@/lib/profiles/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -55,9 +56,9 @@ export default async function MePage() {
         profileSyncError = sync.error;
         const profile = await getProfileByUserId(supabase, user.id);
         dbHandle = profile?.handle ?? null;
-        displayName = profile?.display_name ?? null;
-        bio = profile?.bio ?? null;
-        avatarUrl = profile?.avatar_url ?? null;
+        displayName = profile?.display_name?.trim() || displayNameFromAuthUser(user) || null;
+        bio = profile?.bio?.trim() || bioFromAuthUser(user) || null;
+        avatarUrl = profile?.avatar_url?.trim() || avatarUrlFromAuthUser(user) || null;
         const posts = await getPostsByUserId(supabase, user.id, { limit: 60 });
         postPreviews = posts.map((p) => ({ id: p.id, imageUrl: p.image_url ?? null }));
         followers = await countFollowers(supabase, user.id);
@@ -115,7 +116,7 @@ export default async function MePage() {
               following,
             }}
             showFollowCounts={configured}
-            usernameUnderStats={!displayName && handle ? `@${handle}` : null}
+            usernameUnderStats={handle ? `@${handle}` : null}
             actions={
               <div className="flex flex-wrap gap-2">
                 <NewPostButton />

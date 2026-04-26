@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { readDevProfileLocalBackup } from "@/lib/auth/dev-profile-local";
 import { friendlySignInError } from "@/lib/auth/sign-in-errors";
 import { parseUsername } from "@/lib/auth/username";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
@@ -60,13 +61,16 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
     setLoading(true);
     try {
       if (!ready && isDev) {
-        const handle = mode === "signup" ? parseUsername(username) ?? undefined : undefined;
+        const backup = readDevProfileLocalBackup(trimmedEmail);
+        const signupHandle = mode === "signup" ? parseUsername(username) : null;
         const res = await fetch("/api/orbit-dev-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: trimmedEmail,
-            ...(handle ? { username: handle } : {}),
+            ...(signupHandle ? { username: signupHandle } : backup?.username ? { username: backup.username } : {}),
+            ...(backup?.displayName ? { displayName: backup.displayName } : {}),
+            ...(backup?.bio ? { bio: backup.bio } : {}),
           }),
         });
         if (!res.ok) {
