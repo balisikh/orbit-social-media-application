@@ -3,15 +3,11 @@ import { cookies } from "next/headers";
 import {
   ORBIT_DEV_SESSION_COOKIE,
   encodeDevSessionPayload,
-  isDevSessionAllowed,
 } from "@/lib/auth/dev-session";
 import { getSupabasePublicConfig } from "@/lib/env/supabase-public";
 
-/** Local development only: sign in without Supabase when env keys are missing. */
+/** Local session: sign in without Supabase when env keys are missing. */
 export async function POST(request: Request) {
-  if (!isDevSessionAllowed()) {
-    return NextResponse.json({ error: "Not available" }, { status: 403 });
-  }
   if (getSupabasePublicConfig().ready) {
     return NextResponse.json({ error: "Cloud sign-in is already configured for this app." }, { status: 400 });
   }
@@ -52,9 +48,6 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  if (!isDevSessionAllowed()) {
-    return NextResponse.json({ error: "Not available" }, { status: 403 });
-  }
   const jar = await cookies();
   jar.delete(ORBIT_DEV_SESSION_COOKIE);
   return NextResponse.json({ ok: true });

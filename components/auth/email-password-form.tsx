@@ -51,18 +51,10 @@ export function EmailPasswordForm({ mode }: EmailPasswordFormProps) {
     }
 
     const ready = getSupabasePublicConfig().ready;
-    const isDev = process.env.NODE_ENV === "development";
-
-    if (!ready && !isDev) {
-      setError(
-        "Sign-in needs Supabase on this server. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel (Production), then redeploy.",
-      );
-      return;
-    }
 
     setLoading(true);
     try {
-      if (!ready && isDev) {
+      if (!ready) {
         const backup = readDevProfileLocalBackup(trimmedEmail);
         const signupHandle = mode === "signup" ? parseUsername(username) : null;
         const res = await fetch("/api/orbit-dev-session", {

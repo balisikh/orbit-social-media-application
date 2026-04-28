@@ -188,9 +188,6 @@ fs.writeFileSync(htmlPath, html, "utf8");
 
 // Print instructions for Chrome headless (Windows-friendly)
 const htmlUrl = pathToFileURL(htmlPath).href;
-// eslint-disable-next-line no-console
 console.log(`Wrote ${path.relative(repoRoot, htmlPath)}`);
-// eslint-disable-next-line no-console
 console.log(`Open or print-to-PDF URL:\n${htmlUrl}`);
-// eslint-disable-next-line no-console
 console.log(`Target PDF path:\n${pdfPath}`);

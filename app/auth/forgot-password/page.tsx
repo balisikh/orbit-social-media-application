@@ -12,11 +12,8 @@ export default function ForgotPasswordPage() {
       ) : (
         <div className="mx-auto max-w-sm space-y-4 text-center">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Password reset needs Supabase environment variables on this server. In Vercel → Project → Settings →
-            Environment Variables, set{" "}
-            <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-900">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-            <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-900">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> for
-            Production, then redeploy.
+            Password reset is only available when Supabase is configured. This deployment is running in local mode (browser-only),
+            so password reset emails are not supported.
           </p>
           <Link href="/auth/login" className="font-medium text-violet-600 underline dark:text-violet-400">
             Back to sign in
