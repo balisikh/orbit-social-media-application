@@ -188,11 +188,34 @@ Orbit is a **dynamic website** (server-rendered routes + client interactions) th
 - **Portrait photos + short captions:** framed for consistent card layout.
 - **Slideshow posts:** framed for swipe/arrow navigation with consistent height on larger breakpoints.
 
+### 6.1.1 Feed — what / why / how / ways (expanded)
+
+- **What it is**: The main scrolling stream where posts appear as cards. Each card can be a single portrait photo, a slideshow (multiple media items), or a video.
+- **Why we have it**: This is the core “daily open” surface—users come here to catch up quickly.
+- **How we use it**:
+  - Open **Feed** → scroll posts
+  - Use actions: **Like**, **Comment**, **Share**
+  - Tap **New post** to publish content
+- **Ways of doing it (modes)**:
+  - **Local mode (current Vercel demo)**: posts are stored in the browser under `orbit:posts:<email>`. Each device/browser has its own feed.
+  - **Supabase mode (optional production)**: posts and follow graph are stored in a database so feed content is shared across users/devices.
+
 ### 6.2 Reels (`/reels`, `/reels/new`)
 
 - **What it is:** Vertical short video browsing and publishing entry points.
 - **Why it exists:** Short video is a distinct consumption pattern from static feed posts.
 - **How it is used:** Users browse reels tabs and upload reels.
+
+### 6.2.1 Reels — what / why / how / ways (expanded)
+
+- **What it is**: Full-height vertical video content in a swipeable player.
+- **Why we have it**: Reels support discovery and fast entertainment, separate from the photo feed.
+- **How we use it**:
+  - Open **Reels** → watch and swipe
+  - Create reels via **New reel**
+- **Ways of doing it (modes)**:
+  - **Local mode**: reel metadata is stored in localStorage (`orbit:reels:<email>`), while video bytes are stored in IndexedDB (so it doesn’t hit localStorage quota quickly).
+  - **Supabase mode**: reel metadata goes to DB and videos go to storage (not enabled in Local-only deployments).
 
 ### 6.3 Messages (`/messages`)
 
@@ -202,6 +225,17 @@ Orbit is a **dynamic website** (server-rendered routes + client interactions) th
   - With Supabase configured: server-backed messaging paths are used.
   - Without Supabase (development preview): local browser preview behavior may be used for demos.
 
+### 6.3.1 Messages — what / why / how / ways (expanded)
+
+- **What it is**: A split inbox + thread layout with a composer, attachments (gallery/stickers), and reactions.
+- **Why we have it**: Direct conversation is a core social feature—users connect privately after discovering content.
+- **How we use it**:
+  - Open **Messages** → select a conversation → send messages
+  - Attach photo/video from gallery and add reactions
+- **Ways of doing it (modes)**:
+  - **Local mode**: threads are stored in the browser under `orbit:messages:<email>`.
+  - **Supabase mode**: messages are stored in the database with RLS policies.
+
 ### 6.4 Profile (`/me`, `/me/edit`, `/u/[handle]`)
 
 - **What it is:**
@@ -210,11 +244,66 @@ Orbit is a **dynamic website** (server-rendered routes + client interactions) th
 - **Why it exists:** Identity + portfolio + shareable profile link.
 - **How it is used:** Users set display name, username/handle, bio, avatar; visitors can follow/message depending on configuration.
 
+### 6.4.1 Profile / follow graph — what / why / how / ways (expanded)
+
+- **Profile basics (name, @handle, bio, avatar)**  
+  - **What it is**: Your identity panel.  
+  - **Why we have it**: People need a consistent identity and shareable profile link.  
+  - **How we use it**: `/me/edit` → set photo/name/@handle/bio → Save.  
+  - **Ways of doing it**:
+    - **Local mode**: saved per browser (avatar stored at `orbit:avatar:<email>`, and profile basics in a browser-only session backup).
+    - **Supabase mode**: stored in DB + auth metadata and shows everywhere on login.
+
+- **Following**  
+  - **What it is**: Accounts you follow.  
+  - **Why we have it**: Following determines what should show in your feed and builds the social graph.  
+  - **How we use it**: open **Following** tab → view/unfollow.  
+  - **Ways of doing it**:
+    - Local mode: stored in `orbit:follows:v2` in localStorage.
+    - Supabase mode: stored in DB, enforced by RLS.
+
+- **Followers**  
+  - **What it is**: People who follow you.  
+  - **Why we have it**: Audience + safety controls.  
+  - **How we use it**: open **Followers** tab → search → remove/block.  
+  - **Ways of doing it**:
+    - Organic: someone visits `/u/[handle]` and taps Follow.
+    - Demo: use **Demo tools** to generate requests and followers for testing.
+
+- **Requests (follow requests)**  
+  - **What it is**: A queue of people requesting to follow you.  
+  - **Why we have it**: Supports approval workflows and prevents unwanted followers.  
+  - **How we use it**: open **Requests** → **Accept** or **Decline**.  
+  - **Ways of doing it**:
+    - Demo tools can bulk-generate requests to test the UI.
+
+- **Block**  
+  - **What it is**: Prevents an account from following/interacting.  
+  - **Why we have it**: Safety and control.  
+  - **How we use it**: Followers list → **Block**; Blocked list → **Unblock**.
+
+- **Demo tools**  
+  - **What it is**: Tools to generate demo requests/followers to make the profile look realistic for testing.  
+  - **Why we have it**: Lets you test the end-to-end UI without waiting for real users.  
+  - **How we use it**: Demo tools → enter a count → Add requests → manage them in Followers/Requests.
+
 ### 6.5 Authentication (`/auth/login`, `/auth/signup`, password reset pages)
 
 - **What it is:** Email/password authentication via Supabase when configured; otherwise Local mode creates a browser-only session so users can use Orbit without a backend.
 - **Why it exists:** Secure accounts and server-backed personalization.
 - **How it is used:** Users sign up/sign in; sessions are maintained for app routes. In Local mode, sessions and data persist in browser storage for that domain.
+
+### 6.5.1 Authentication — what / why / how / ways (expanded)
+
+- **What it is**: The entry point to identify a user, so Orbit can load the right profile/posts/messages.
+- **Why we have it**: Without identity, Orbit can’t know which data belongs to which user (even in Local mode).
+- **How we use it**:
+  - `/auth/signup` creates a session
+  - `/auth/login` restores a session
+  - `/auth/forgot-password` and `/auth/update-password` are available only in Supabase mode (email workflow)
+- **Ways of doing it**:
+  - **Local mode**: creates a browser-only session cookie and stores user data locally per domain.
+  - **Supabase mode**: creates a Supabase session (JWT/cookies) and persists data in the database.
 
 ---
 

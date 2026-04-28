@@ -187,11 +187,34 @@
 <li><strong>Portrait photos + short captions:</strong> framed for consistent card layout.</li>
 <li><strong>Slideshow posts:</strong> framed for swipe/arrow navigation with consistent height on larger breakpoints.</li>
 </ul>
+<h3>6.1.1 Feed — what / why / how / ways (expanded)</h3>
+<ul>
+<li><strong>What it is</strong>: The main scrolling stream where posts appear as cards. Each card can be a single portrait photo, a slideshow (multiple media items), or a video.</li>
+<li><strong>Why we have it</strong>: This is the core “daily open” surface—users come here to catch up quickly.</li>
+<li><strong>How we use it</strong>:</li>
+<li>Open <strong>Feed</strong> → scroll posts</li>
+<li>Use actions: <strong>Like</strong>, <strong>Comment</strong>, <strong>Share</strong></li>
+<li>Tap <strong>New post</strong> to publish content</li>
+<li><strong>Ways of doing it (modes)</strong>:</li>
+<li><strong>Local mode (current Vercel demo)</strong>: posts are stored in the browser under <code>orbit:posts:&lt;email&gt;</code>. Each device/browser has its own feed.</li>
+<li><strong>Supabase mode (optional production)</strong>: posts and follow graph are stored in a database so feed content is shared across users/devices.</li>
+</ul>
 <h3>6.2 Reels (<code>/reels</code>, <code>/reels/new</code>)</h3>
 <ul>
 <li><strong>What it is:</strong> Vertical short video browsing and publishing entry points.</li>
 <li><strong>Why it exists:</strong> Short video is a distinct consumption pattern from static feed posts.</li>
 <li><strong>How it is used:</strong> Users browse reels tabs and upload reels.</li>
+</ul>
+<h3>6.2.1 Reels — what / why / how / ways (expanded)</h3>
+<ul>
+<li><strong>What it is</strong>: Full-height vertical video content in a swipeable player.</li>
+<li><strong>Why we have it</strong>: Reels support discovery and fast entertainment, separate from the photo feed.</li>
+<li><strong>How we use it</strong>:</li>
+<li>Open <strong>Reels</strong> → watch and swipe</li>
+<li>Create reels via <strong>New reel</strong></li>
+<li><strong>Ways of doing it (modes)</strong>:</li>
+<li><strong>Local mode</strong>: reel metadata is stored in localStorage (<code>orbit:reels:&lt;email&gt;</code>), while video bytes are stored in IndexedDB (so it doesn’t hit localStorage quota quickly).</li>
+<li><strong>Supabase mode</strong>: reel metadata goes to DB and videos go to storage (not enabled in Local-only deployments).</li>
 </ul>
 <h3>6.3 Messages (<code>/messages</code>)</h3>
 <ul>
@@ -201,6 +224,17 @@
 <li>With Supabase configured: server-backed messaging paths are used.</li>
 <li>Without Supabase (development preview): local browser preview behavior may be used for demos.</li>
 </ul>
+<h3>6.3.1 Messages — what / why / how / ways (expanded)</h3>
+<ul>
+<li><strong>What it is</strong>: A split inbox + thread layout with a composer, attachments (gallery/stickers), and reactions.</li>
+<li><strong>Why we have it</strong>: Direct conversation is a core social feature—users connect privately after discovering content.</li>
+<li><strong>How we use it</strong>:</li>
+<li>Open <strong>Messages</strong> → select a conversation → send messages</li>
+<li>Attach photo/video from gallery and add reactions</li>
+<li><strong>Ways of doing it (modes)</strong>:</li>
+<li><strong>Local mode</strong>: threads are stored in the browser under <code>orbit:messages:&lt;email&gt;</code>.</li>
+<li><strong>Supabase mode</strong>: messages are stored in the database with RLS policies.</li>
+</ul>
 <h3>6.4 Profile (<code>/me</code>, <code>/me/edit</code>, <code>/u/[handle]</code>)</h3>
 <ul>
 <li><strong>What it is:</strong></li>
@@ -209,11 +243,71 @@
 <li><strong>Why it exists:</strong> Identity + portfolio + shareable profile link.</li>
 <li><strong>How it is used:</strong> Users set display name, username/handle, bio, avatar; visitors can follow/message depending on configuration.</li>
 </ul>
+<h3>6.4.1 Profile / follow graph — what / why / how / ways (expanded)</h3>
+<ul>
+<li><strong>Profile basics (name, @handle, bio, avatar)</strong></li>
+<li><strong>What it is</strong>: Your identity panel.</li>
+<li><strong>Why we have it</strong>: People need a consistent identity and shareable profile link.</li>
+<li><strong>How we use it</strong>: <code>/me/edit</code> → set photo/name/@handle/bio → Save.</li>
+<li><strong>Ways of doing it</strong>:</li>
+<li><strong>Local mode</strong>: saved per browser (avatar stored at <code>orbit:avatar:&lt;email&gt;</code>, and profile basics in a browser-only session backup).</li>
+<li><strong>Supabase mode</strong>: stored in DB + auth metadata and shows everywhere on login.</li>
+</ul>
+<ul>
+<li><strong>Following</strong></li>
+<li><strong>What it is</strong>: Accounts you follow.</li>
+<li><strong>Why we have it</strong>: Following determines what should show in your feed and builds the social graph.</li>
+<li><strong>How we use it</strong>: open <strong>Following</strong> tab → view/unfollow.</li>
+<li><strong>Ways of doing it</strong>:</li>
+<li>Local mode: stored in <code>orbit:follows:v2</code> in localStorage.</li>
+<li>Supabase mode: stored in DB, enforced by RLS.</li>
+</ul>
+<ul>
+<li><strong>Followers</strong></li>
+<li><strong>What it is</strong>: People who follow you.</li>
+<li><strong>Why we have it</strong>: Audience + safety controls.</li>
+<li><strong>How we use it</strong>: open <strong>Followers</strong> tab → search → remove/block.</li>
+<li><strong>Ways of doing it</strong>:</li>
+<li>Organic: someone visits <code>/u/[handle]</code> and taps Follow.</li>
+<li>Demo: use <strong>Demo tools</strong> to generate requests and followers for testing.</li>
+</ul>
+<ul>
+<li><strong>Requests (follow requests)</strong></li>
+<li><strong>What it is</strong>: A queue of people requesting to follow you.</li>
+<li><strong>Why we have it</strong>: Supports approval workflows and prevents unwanted followers.</li>
+<li><strong>How we use it</strong>: open <strong>Requests</strong> → <strong>Accept</strong> or <strong>Decline</strong>.</li>
+<li><strong>Ways of doing it</strong>:</li>
+<li>Demo tools can bulk-generate requests to test the UI.</li>
+</ul>
+<ul>
+<li><strong>Block</strong></li>
+<li><strong>What it is</strong>: Prevents an account from following/interacting.</li>
+<li><strong>Why we have it</strong>: Safety and control.</li>
+<li><strong>How we use it</strong>: Followers list → <strong>Block</strong>; Blocked list → <strong>Unblock</strong>.</li>
+</ul>
+<ul>
+<li><strong>Demo tools</strong></li>
+<li><strong>What it is</strong>: Tools to generate demo requests/followers to make the profile look realistic for testing.</li>
+<li><strong>Why we have it</strong>: Lets you test the end-to-end UI without waiting for real users.</li>
+<li><strong>How we use it</strong>: Demo tools → enter a count → Add requests → manage them in Followers/Requests.</li>
+</ul>
 <h3>6.5 Authentication (<code>/auth/login</code>, <code>/auth/signup</code>, password reset pages)</h3>
 <ul>
 <li><strong>What it is:</strong> Email/password authentication via Supabase when configured; otherwise Local mode creates a browser-only session so users can use Orbit without a backend.</li>
 <li><strong>Why it exists:</strong> Secure accounts and server-backed personalization.</li>
 <li><strong>How it is used:</strong> Users sign up/sign in; sessions are maintained for app routes. In Local mode, sessions and data persist in browser storage for that domain.</li>
+</ul>
+<h3>6.5.1 Authentication — what / why / how / ways (expanded)</h3>
+<ul>
+<li><strong>What it is</strong>: The entry point to identify a user, so Orbit can load the right profile/posts/messages.</li>
+<li><strong>Why we have it</strong>: Without identity, Orbit can’t know which data belongs to which user (even in Local mode).</li>
+<li><strong>How we use it</strong>:</li>
+<li><code>/auth/signup</code> creates a session</li>
+<li><code>/auth/login</code> restores a session</li>
+<li><code>/auth/forgot-password</code> and <code>/auth/update-password</code> are available only in Supabase mode (email workflow)</li>
+<li><strong>Ways of doing it</strong>:</li>
+<li><strong>Local mode</strong>: creates a browser-only session cookie and stores user data locally per domain.</li>
+<li><strong>Supabase mode</strong>: creates a Supabase session (JWT/cookies) and persists data in the database.</li>
 </ul>
 <hr />
 <h2>7) Reaching target audiences (distribution and growth)</h2>
