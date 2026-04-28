@@ -20,6 +20,10 @@ function emailInitial(email: string): string {
   return c ? c.toUpperCase() : "?";
 }
 
+function localAvatarStorageKey(email: string): string {
+  return `orbit:avatar:${email.trim().toLowerCase()}`;
+}
+
 function menuIdentityInitial(
   email: string,
   handle: string | null | undefined,
@@ -139,11 +143,44 @@ export function HeaderAuthActions({
   const router = useRouter();
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const menuRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     menuRef.current?.removeAttribute("open");
   }, [pathname]);
+
+  useEffect(() => {
+    if (!signedInEmail) {
+      setLocalAvatarUrl(null);
+      return;
+    }
+    if (sessionMode !== "dev") {
+      setLocalAvatarUrl(null);
+      return;
+    }
+    const normalizedEmail = signedInEmail.trim().toLowerCase();
+    const key = localAvatarStorageKey(normalizedEmail);
+    function read() {
+      try {
+        const v = window.localStorage.getItem(key);
+        setLocalAvatarUrl(v && v.trim().length ? v : null);
+      } catch {
+        setLocalAvatarUrl(null);
+      }
+    }
+    read();
+    function onUpdated(e: Event) {
+      const detailOwnerKey = (e as CustomEvent<{ ownerKey?: string }>)?.detail?.ownerKey;
+      if (!detailOwnerKey || detailOwnerKey === normalizedEmail) read();
+    }
+    window.addEventListener("storage", read);
+    window.addEventListener("orbit:avatar-updated", onUpdated as EventListener);
+    return () => {
+      window.removeEventListener("storage", read);
+      window.removeEventListener("orbit:avatar-updated", onUpdated as EventListener);
+    };
+  }, [signedInEmail, sessionMode]);
 
   async function signOut() {
     setSigningOut(true);
@@ -191,12 +228,22 @@ export function HeaderAuthActions({
         className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-zinc-200/90 bg-white/80 py-1 pl-1 pr-2 text-left shadow-sm outline-none ring-offset-2 transition hover:border-zinc-300 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-violet-500/40 dark:border-zinc-700 dark:bg-zinc-900/80 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 [&::-webkit-details-marker]:hidden"
         aria-label={`Account menu, ${identity.primary}`}
       >
-        <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-amber-300 text-xs font-semibold text-white"
-          aria-hidden
-        >
-          {menuIdentityInitial(signedInEmail, signedInHandle, signedInDisplayName)}
-        </span>
+        {localAvatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- local data URL avatar
+          <img
+            src={localAvatarUrl}
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white/70 dark:ring-zinc-950/70"
+            aria-hidden
+          />
+        ) : (
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-amber-300 text-xs font-semibold text-white"
+            aria-hidden
+          >
+            {menuIdentityInitial(signedInEmail, signedInHandle, signedInDisplayName)}
+          </span>
+        )}
         <span className="hidden min-w-0 max-w-[11rem] flex-col sm:flex">
           <span className="truncate text-xs font-medium text-zinc-900 dark:text-zinc-100" title={identity.primary}>
             {identity.primary}
