@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { writeDevProfileLocalBackup } from "@/lib/auth/dev-profile-local";
 import { parseUsername } from "@/lib/auth/username";
+import { LocalDataTransfer } from "@/components/me/local-data-transfer";
 
 type Props = {
   mode: "supabase" | "dev";
@@ -310,6 +311,8 @@ export function SetProfileBasicsForm({ mode, email, currentHandle, currentDispla
           {error}
         </p>
       ) : null}
+
+      {mode === "dev" ? <LocalDataTransfer ownerEmail={email} handle={currentHandle ?? null} /> : null}
     </form>
   );
 }
