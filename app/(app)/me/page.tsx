@@ -159,8 +159,7 @@ export default async function MePage() {
             <Link href="/auth/login" className="font-medium text-violet-600 underline dark:text-violet-400">
               Sign in
             </Link>{" "}
-            — while running <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-900">npm run dev</code> you
-            can still use a local preview sign-in.
+            to start a local-mode session (saved to this browser only).
           </p>
         </div>
       ) : (
