@@ -61,6 +61,7 @@
 <p><strong>Deployment platform:</strong> Vercel</p>
 <p><strong>Backend platform:</strong> Supabase</p>
 <p><strong>Date:</strong> April 2026</p>
+<p><strong>Live URL (current):</strong> <code>https://orbit-social-media-application.vercel.app/</code></p>
 <hr />
 <h2>1) Executive summary</h2>
 <p>Orbit is designed as a modern social product with four core modules:</p>
@@ -70,12 +71,12 @@
 <li><strong>Messages</strong> for direct conversations.</li>
 <li><strong>Profile</strong> for identity and a portfolio grid of posts.</li>
 </ul>
-<p>The application is engineered to run locally for development, and to deploy to production using <strong>Vercel</strong> + <strong>Supabase</strong> public environment variables for client-safe configuration.</p>
+<p>The application is engineered to run locally for development, and to deploy to production using <strong>Vercel</strong>. In the current deployment, Supabase is not configured and Orbit runs in <strong>Local mode</strong> (browser-only data) so users can try the full UI without a backend.</p>
 <hr />
 <h2>2) What Orbit is (definition)</h2>
 <p>Orbit is a <strong>dynamic website</strong> (server-rendered routes + client interactions) that provides social-media workflows:</p>
 <ul>
-<li><strong>Authentication:</strong> sign up and sign in (Supabase email/password when configured).</li>
+<li><strong>Authentication:</strong> sign up and sign in (Supabase email/password when configured; <strong>Local mode</strong> browser-only sessions when not configured).</li>
 <li><strong>Profile identity:</strong> display name, username/handle, bio, avatar.</li>
 <li><strong>Content publishing:</strong> posts (including slideshow-style multi-media posts in local mode paths) and reels.</li>
 <li><strong>Social graph primitives:</strong> follow-related flows exist in the codebase for Supabase-backed usage (depending on migrations and configuration).</li>
@@ -93,14 +94,15 @@
 <li>Keep UI responsive across <strong>mobile, tablet, and desktop</strong> using Tailwind breakpoints (<code>sm</code>, <code>md</code>, <code>lg</code>, …).</li>
 <li>Keep authentication and session refresh predictable in production.</li>
 <li>Separate <strong>local preview</strong> development behavior from <strong>production</strong> behavior.</li>
+<li>Support a <strong>Local mode</strong> deployment on Vercel (no Supabase) for demo/portfolio use, where data is saved per-browser.</li>
 </ul>
 <hr />
 <h2>4) How Orbit is used (user journeys)</h2>
 <h3>Journey A — New user onboarding</h3>
 <ol>
 <li>User visits <code>/auth/signup</code>.</li>
-<li>User creates an account (Supabase).</li>
-<li>User completes profile basics on <code>/me/edit</code>.</li>
+<li>User creates an account (Supabase or Local mode).</li>
+<li>User completes profile basics on <code>/me/edit</code> (display name, @handle, bio, avatar).</li>
 <li>User creates a first post on <code>/me/post/new</code>.</li>
 <li>User sees content on <code>/feed</code> and <code>/me</code>.</li>
 </ol>
@@ -114,7 +116,7 @@
 <h3>Journey C — Password recovery</h3>
 <ol>
 <li>User visits <code>/auth/forgot-password</code>.</li>
-<li>Supabase sends reset email (requires email provider configuration in Supabase).</li>
+<li>Supabase sends reset email (only when Supabase is configured; Local mode does not support password reset emails).</li>
 <li>User completes <code>/auth/update-password</code> after the callback flow.</li>
 </ol>
 <hr />
@@ -139,6 +141,7 @@
 <ul>
 <li><strong>Supabase</strong> for cloud auth and persistence when <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> are configured.</li>
 <li><strong>Vercel</strong> for hosting and continuous deployment from GitHub.</li>
+<li><strong>Local mode fallback (no Supabase):</strong> allows sign in + full UI demos on Vercel with browser-only storage.</li>
 </ul>
 <h3>Stage 4 — Development</h3>
 <p><strong>Outputs:</strong> implemented UI + API routes + database migrations (SQL under <code>supabase/migrations/</code>).</p>
@@ -170,7 +173,7 @@
 <p><strong>Screenshots included in this handbook (from your deployment flow):</strong></p>
 <figure class="figure"><img src="./assets/vercel-new-project-import.png" alt="Vercel new project import from GitHub" /><figcaption>Vercel new project import from GitHub</figcaption></figure>
 <figure class="figure"><img src="./assets/vercel-new-project-env-vars.png" alt="Vercel new project environment variables and deploy" /><figcaption>Vercel new project environment variables and deploy</figcaption></figure>
-<p><strong>Important deployment note shown in the screenshot:</strong> ensure <code>NEXT_PUBLIC_SUPABASE_URL</code> is your real Supabase URL (not a placeholder), and add <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> as a second variable (not visible in the screenshot, but required by the app).</p>
+<p><strong>Important deployment note:</strong>\n+\n+- For <strong>Supabase mode</strong>, ensure <code>NEXT_PUBLIC_SUPABASE_URL</code> is your real Supabase URL (not a placeholder), and add <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.\n+- For <strong>Local mode</strong> (current live deployment), Supabase is intentionally not configured, and all data is stored in each browser.\n+\n+<strong>Live deployment (current):</strong> <code>https://orbit-social-media-application.vercel.app/</code></p>
 <hr />
 <h2>6) Key features (what / why / how)</h2>
 <h3>6.1 Feed (<code>/feed</code>)</h3>
@@ -208,9 +211,9 @@
 </ul>
 <h3>6.5 Authentication (<code>/auth/login</code>, <code>/auth/signup</code>, password reset pages)</h3>
 <ul>
-<li><strong>What it is:</strong> Email/password authentication via Supabase when configured.</li>
+<li><strong>What it is:</strong> Email/password authentication via Supabase when configured; otherwise Local mode creates a browser-only session so users can use Orbit without a backend.</li>
 <li><strong>Why it exists:</strong> Secure accounts and server-backed personalization.</li>
-<li><strong>How it is used:</strong> Users sign up/sign in; sessions are maintained for app routes.</li>
+<li><strong>How it is used:</strong> Users sign up/sign in; sessions are maintained for app routes. In Local mode, sessions and data persist in browser storage for that domain.</li>
 </ul>
 <hr />
 <h2>7) Reaching target audiences (distribution and growth)</h2>
@@ -237,14 +240,14 @@
 <h3>Issue 1 — “Password reset is not available…” on production</h3>
 <ul>
 <li><strong>Symptom:</strong> reset page shows unavailable messaging.</li>
-<li><strong>Cause:</strong> Supabase public environment variables not available in the deployment environment (<code>NEXT_PUBLIC_SUPABASE_URL</code> / <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>).</li>
-<li><strong>Mitigation:</strong> set both variables in Vercel for Production and redeploy; configure Supabase Auth redirect URLs; configure email delivery in Supabase for actual reset emails.</li>
+<li><strong>Cause:</strong> Supabase is not configured (Local mode). Password reset requires Supabase email delivery.</li>
+<li><strong>Mitigation:</strong> either configure Supabase (URL + anon key + redirect URLs + email) or keep Local mode and remove password reset from expectations.</li>
 </ul>
 <h3>Issue 2 — “Sign-in is not available on this server.”</h3>
 <ul>
 <li><strong>Symptom:</strong> login cannot proceed in production.</li>
-<li><strong>Cause:</strong> same as Issue 1: missing Supabase public configuration in production; local preview sign-in is intentionally limited to development environments.</li>
-<li><strong>Mitigation:</strong> configure Supabase env vars on Vercel + redeploy; verify Supabase Auth settings.</li>
+<li><strong>Cause:</strong> earlier builds blocked sign in when Supabase was missing.</li>
+<li><strong>Mitigation:</strong> implement <strong>Local mode sign in</strong> when Supabase is not configured (current approach on the live site).</li>
 </ul>
 <h3>Issue 3 — Profile fields reverting / conflicting with auth metadata defaults</h3>
 <ul>
@@ -264,27 +267,21 @@
 <ul>
 <li><strong>Mitigation:</strong> retry on stable network; restart browser; verify VPN/proxy; verify local dev server is running; verify deployed site DNS/SSL on Vercel.</li>
 </ul>
+<p>Additionally, a local dev server can show <code>ERR_CONNECTION_REFUSED</code> when the Next.js dev server is not running or the wrong URL is used (e.g. opening a Vercel URL as if it were localhost).</p>
+<figure class="figure"><img src="./assets/error-connection-refused.png" alt="Connection refused error example" /><figcaption>Connection refused error example</figcaption></figure>
 <hr />
 <h2>9) Screenshots you should add for a “complete” PDF (recommended next captures)</h2>
 <p>The screenshots included above cover <strong>Vercel project creation + env var entry</strong>. For a complete stakeholder PDF, add these additional screenshots (name them consistently under <code>docs/assets/</code>):</p>
 <ol>
-<li><strong>Supabase dashboard → API keys</strong> (blur secrets in PDF if sharing externally)</li>
-<li><strong>Supabase → Authentication → URL configuration</strong> showing redirect URLs</li>
-<li><strong>Orbit live site</strong> <code>/feed</code>, <code>/reels</code>, <code>/messages</code>, <code>/me</code>, <code>/me/edit</code>, <code>/auth/login</code></li>
+<li><strong>Orbit live site</strong> <code>/feed</code>, <code>/reels</code>, <code>/messages</code>, <code>/me</code>, <code>/me/edit</code>, <code>/auth/login</code> (showing Local mode banner)</li>
+<li><strong>Data transfer UI</strong> on <code>/me/edit</code> (Export/Import local data)</li>
 <li><strong>Vercel deployment success</strong> page showing “Ready” and the live domain</li>
+<li>(Optional, if moving back to Supabase) <strong>Supabase dashboard → API keys</strong> and <strong>Auth URL configuration</strong> (blur secrets)</li>
 </ol>
 <hr />
 <h2>10) Conclusion — what to do next time (process improvements)</h2>
 <ol>
-<li><strong>Pre-deploy checklist</strong> pinned in the repo README or team wiki:</li>
-</ol>
-<ul>
-<li><code>NEXT_PUBLIC_SUPABASE_URL</code></li>
-<li><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
-<li>Supabase redirect URLs include <code>/auth/callback</code></li>
-<li>migrations applied</li>
-</ul>
-<ol>
+<li><strong>Decide the deployment mode early:</strong>\n+   - <strong>Local mode</strong> for demo/portfolio (browser-only, no shared data)\n+   - <strong>Supabase mode</strong> for real multi-user use (shared database + auth)\n+2. <strong>Pre-deploy checklist</strong> pinned in the repo README or team wiki (Supabase mode):\n+   - <code>NEXT_PUBLIC_SUPABASE_URL</code>\n+   - <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>\n+   - Supabase redirect URLs include <code>/auth/callback</code>\n+   - migrations applied</li>
 <li><strong>CI gate:</strong> run <code>tsc</code>, <code>lint</code>, and <code>build</code> on every PR.</li>
 <li><strong>Separate “preview vs production” documentation</strong> so testers do not confuse local preview behavior with cloud persistence.</li>
 <li><strong>Operational monitoring:</strong> Vercel deployment logs + Supabase auth logs for first-day issues.</li>
@@ -303,6 +300,7 @@
 <li><code>./assets/vercel-new-project-import.png</code></li>
 <li><code>./assets/vercel-new-project-env-vars.png</code></li>
 <li><code>./assets/error-connection-failed-network-io-suspended.png</code></li>
+<li><code>./assets/error-connection-refused.png</code></li>
 </ul>
       <p class="muted">Generated from <code>docs/ORBIT-HANDBOOK.md</code> for PDF printing.</p>
     </main>
