@@ -373,6 +373,72 @@
 <li>(Optional, if moving back to Supabase) <strong>Supabase dashboard → API keys</strong> and <strong>Auth URL configuration</strong> (blur secrets)</li>
 </ol>
 <hr />
+<h2>10) How the final project was produced (end-to-end)</h2>
+<p>This section summarizes the actual steps used to produce the Orbit Social Media Web Application and get it running locally and on Vercel.</p>
+<h3>10.1 What was built (final state)</h3>
+<p>Orbit delivers these modules:</p>
+<ul>
+<li><strong>Feed</strong>: create and browse posts, including single portrait photos and slideshow posts.</li>
+<li><strong>Reels</strong>: browse vertical reels and create reels in Local mode (with video stored in IndexedDB).</li>
+<li><strong>Messages</strong>: inbox + thread UI stored locally in Local mode.</li>
+<li><strong>Profile</strong>: display name, @handle, bio, avatar, post grid, and local follow tools (followers/following/requests/block + demo tools).</li>
+<li><strong>Local data transfer</strong>: export/import Local mode data so the Vercel site can match the Cursor/localhost setup.</li>
+</ul>
+<h3>10.2 How it was created (Cursor workflow)</h3>
+<p>Typical implementation workflow used:</p>
+<ol>
+<li><strong>Run the app locally</strong> with <code>npm run dev</code>.</li>
+<li><strong>Build UI and flows</strong> across the main routes (<code>/feed</code>, <code>/reels</code>, <code>/messages</code>, <code>/me</code>, <code>/me/edit</code>, <code>/me/post/new</code>).</li>
+<li><strong>Improve responsiveness</strong> so the UI works on mobile, tablet, and desktop (Tailwind breakpoints).</li>
+<li><strong>Fix production warnings</strong> (e.g., Next.js <code>middleware</code> convention renamed to <code>proxy</code>).</li>
+<li><strong>Verify correctness</strong> repeatedly using:</li>
+</ol>
+<ul>
+<li><code>npx tsc --noEmit</code></li>
+<li><code>npm run lint</code></li>
+<li><code>npm run build</code></li>
+</ul>
+<ol>
+<li><strong>Commit and push</strong> updates to GitHub, then deploy through Vercel.</li>
+</ol>
+<h3>10.3 Deployment steps (Vercel)</h3>
+<p>These steps describe how the app was deployed from GitHub to Vercel:</p>
+<ol>
+<li><strong>Import from GitHub</strong>: select repository <code>balisikh/orbit-social-media-application</code> on branch <code>main</code>.</li>
+<li><strong>Project settings</strong>:</li>
+</ol>
+<ul>
+<li>Framework preset: <strong>Next.js</strong></li>
+<li>Root directory: <code>./</code></li>
+<li>Build/output: defaults</li>
+</ul>
+<ol>
+<li><strong>Choose deployment mode</strong>:</li>
+</ol>
+<ul>
+<li><strong>Local mode (current live deployment)</strong>: do not configure Supabase keys; Orbit runs with browser-only storage so anyone can try the UI.</li>
+<li><strong>Supabase mode (optional production)</strong>: set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, apply DB migrations, set Auth redirect URLs, and redeploy.</li>
+</ul>
+<ol>
+<li>Click <strong>Deploy</strong> and verify the deployment shows <strong>Ready</strong>.</li>
+</ol>
+<h3>10.4 How to keep Vercel “up to date”</h3>
+<p>To keep the live site updated with what you build in Cursor:</p>
+<ol>
+<li>Make changes locally.</li>
+<li>Run checks: <code>tsc</code>, <code>lint</code>, <code>build</code>.</li>
+<li><code>git commit</code> and <code>git push</code> to <code>main</code>.</li>
+<li>Vercel auto-deploys from GitHub (or you can click <strong>Redeploy</strong> in Deployments).</li>
+</ol>
+<h3>10.5 How the live site matches the Cursor setup (Local mode)</h3>
+<p>Because Local mode data is stored per-domain, localhost and Vercel do not automatically share the same profile/posts/follows.</p>
+<p>To make them identical:</p>
+<ol>
+<li>On <strong>localhost</strong>: open <code>/me/edit</code> → use <strong>Export data</strong>.</li>
+<li>On <strong>Vercel</strong>: open <code>/me/edit</code> → use <strong>Import</strong> and upload the exported JSON.</li>
+</ol>
+<p>This copies local profile basics, avatar, posts, follows/requests/actions, and messages (and some reel media, within size limits).</p>
+<hr />
 <h2>10) Conclusion — what to do next time (process improvements)</h2>
 <ol>
 <li><strong>Decide the deployment mode early:</strong>\n+   - <strong>Local mode</strong> for demo/portfolio (browser-only, no shared data)\n+   - <strong>Supabase mode</strong> for real multi-user use (shared database + auth)\n+2. <strong>Pre-deploy checklist</strong> pinned in the repo README or team wiki (Supabase mode):\n+   - <code>NEXT_PUBLIC_SUPABASE_URL</code>\n+   - <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>\n+   - Supabase redirect URLs include <code>/auth/callback</code>\n+   - migrations applied</li>

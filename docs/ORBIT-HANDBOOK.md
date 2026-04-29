@@ -380,6 +380,70 @@ The screenshots included above cover **Vercel project creation + env var entry**
 
 ---
 
+## 10) How the final project was produced (end-to-end)
+
+This section summarizes the actual steps used to produce the Orbit Social Media Web Application and get it running locally and on Vercel.
+
+### 10.1 What was built (final state)
+
+Orbit delivers these modules:
+
+- **Feed**: create and browse posts, including single portrait photos and slideshow posts.
+- **Reels**: browse vertical reels and create reels in Local mode (with video stored in IndexedDB).
+- **Messages**: inbox + thread UI stored locally in Local mode.
+- **Profile**: display name, @handle, bio, avatar, post grid, and local follow tools (followers/following/requests/block + demo tools).
+- **Local data transfer**: export/import Local mode data so the Vercel site can match the Cursor/localhost setup.
+
+### 10.2 How it was created (Cursor workflow)
+
+Typical implementation workflow used:
+
+1. **Run the app locally** with `npm run dev`.
+2. **Build UI and flows** across the main routes (`/feed`, `/reels`, `/messages`, `/me`, `/me/edit`, `/me/post/new`).
+3. **Improve responsiveness** so the UI works on mobile, tablet, and desktop (Tailwind breakpoints).
+4. **Fix production warnings** (e.g., Next.js `middleware` convention renamed to `proxy`).
+5. **Verify correctness** repeatedly using:
+   - `npx tsc --noEmit`
+   - `npm run lint`
+   - `npm run build`
+6. **Commit and push** updates to GitHub, then deploy through Vercel.
+
+### 10.3 Deployment steps (Vercel)
+
+These steps describe how the app was deployed from GitHub to Vercel:
+
+1. **Import from GitHub**: select repository `balisikh/orbit-social-media-application` on branch `main`.
+2. **Project settings**:
+   - Framework preset: **Next.js**
+   - Root directory: `./`
+   - Build/output: defaults
+3. **Choose deployment mode**:
+   - **Local mode (current live deployment)**: do not configure Supabase keys; Orbit runs with browser-only storage so anyone can try the UI.
+   - **Supabase mode (optional production)**: set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, apply DB migrations, set Auth redirect URLs, and redeploy.
+4. Click **Deploy** and verify the deployment shows **Ready**.
+
+### 10.4 How to keep Vercel “up to date”
+
+To keep the live site updated with what you build in Cursor:
+
+1. Make changes locally.
+2. Run checks: `tsc`, `lint`, `build`.
+3. `git commit` and `git push` to `main`.
+4. Vercel auto-deploys from GitHub (or you can click **Redeploy** in Deployments).
+
+### 10.5 How the live site matches the Cursor setup (Local mode)
+
+Because Local mode data is stored per-domain, localhost and Vercel do not automatically share the same profile/posts/follows.
+
+To make them identical:
+
+1. On **localhost**: open `/me/edit` → use **Export data**.
+2. On **Vercel**: open `/me/edit` → use **Import** and upload the exported JSON.
+
+This copies local profile basics, avatar, posts, follows/requests/actions, and messages (and some reel media, within size limits).
+
+---
+
 ## 10) Conclusion — what to do next time (process improvements)
 
 1. **Decide the deployment mode early:**\n+   - **Local mode** for demo/portfolio (browser-only, no shared data)\n+   - **Supabase mode** for real multi-user use (shared database + auth)\n+2. **Pre-deploy checklist** pinned in the repo README or team wiki (Supabase mode):\n+   - `NEXT_PUBLIC_SUPABASE_URL`\n+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`\n+   - Supabase redirect URLs include `/auth/callback`\n+   - migrations applied
