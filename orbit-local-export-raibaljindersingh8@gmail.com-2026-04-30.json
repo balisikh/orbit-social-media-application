@@ -1,0 +1,14 @@
+{
+  "schema": "orbit-local-export-v1",
+  "exportedAt": "2026-04-30T12:54:15.306Z",
+  "identity": {
+    "email": "raibaljindersingh8@gmail.com",
+    "handle": "balisikhjatt27"
+  },
+  "localStorage": {
+    "orbit:devProfile:raibaljindersingh8@gmail.com": "{\"username\":\"balisikhjatt27\",\"displayName\":\"Baljinder Singh Rai\",\"bio\":\"Simple life, clear goals\"}",
+    "orbit:messages:raibaljindersingh8@gmail.com": "[{\"id\":\"orbit\",\"name\":\"Orbit team\",\"handle\":\"orbit\",\"createdAt\":\"2026-04-30T12:49:03.428Z\",\"updatedAt\":\"2026-04-30T12:49:03.428Z\",\"messages\":[{\"id\":\"584a13ec-3f1e-41a1-9bd0-aaf79fd35b67\",\"from\":\"them\",\"text\":\"Welcome to Orbit! This inbox is stored locally so you can test messaging now.\",\"createdAt\":\"2026-04-30T12:49:03.428Z\",\"readAt\":\"2026-04-30T12:49:03.428Z\"}]}]",
+    "orbit:follows:v2": "{\"followingByViewer\":{},\"requestsByHandle\":{},\"blockedByHandle\":{}}"
+  },
+  "reelsIdb": []
+}
